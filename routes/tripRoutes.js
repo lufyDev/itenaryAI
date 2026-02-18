@@ -16,6 +16,21 @@ router.post("/create", async (req, res) => {
       durationDays,
     });
 
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const surveyLink = `${frontendUrl}/fillSurveyForm?tripId=${trip._id}`;
+
+    res.json({ ...trip.toObject(), surveyLink });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/:tripId", async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.tripId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
     res.json(trip);
   } catch (error) {
     res.status(500).json({ message: error.message });
