@@ -2,11 +2,19 @@ const aggregateTripData = (members) => {
     if (!members.length) {
       return null;
     }
+
+    const budgetMap = {
+        low: { min: 5000, max: 8000 },
+        medium: { min: 8000, max: 15000 },
+        high: { min: 15000, max: 30000 },
+        luxury: { min: 30000, max: 60000 }
+    };  
   
-    const budgets = members.map((m) => m.surveyAnswers.budget);
-    const minBudget = Math.min(...budgets);
-    const maxBudget = Math.max(...budgets);
-  
+    const budgetRanges = members.map(m => budgetMap[m.surveyAnswers.budget]);
+
+    const minBudget = Math.min(...budgetRanges.map(b => b.min));
+    const maxBudget = Math.max(...budgetRanges.map(b => b.max));
+    
     const preferenceCount = {
       travelStyle: {},
       foodPreference: {},
@@ -14,7 +22,7 @@ const aggregateTripData = (members) => {
     };
   
     const activityCount = {};
-    const nonNegotiables = [];
+    const nonNegotiablesSet = new Set();
   
     members.forEach((member) => {
       const answers = member.surveyAnswers;
@@ -37,7 +45,7 @@ const aggregateTripData = (members) => {
   
       // Collect non-negotiables
       answers.nonNegotiables?.forEach((item) => {
-        nonNegotiables.push(item);
+        nonNegotiablesSet.add(item);
       });
     });
   
@@ -47,8 +55,9 @@ const aggregateTripData = (members) => {
   
     const conflicts = [];
   
-    // Budget conflict
-    if (maxBudget - minBudget > 5000) {
+    // Budget conflict: flag when members span more than one budget tier
+    const uniqueBudgetTiers = new Set(members.map(m => m.surveyAnswers.budget));
+    if (uniqueBudgetTiers.size > 1 && maxBudget - minBudget > 10000) {
       conflicts.push("Large budget variation in group");
     }
   
@@ -73,7 +82,7 @@ const aggregateTripData = (members) => {
         .sort((a, b) => b[1] - a[1])
         .map(([activity]) => activity)
         .slice(0, 5),
-      nonNegotiables,
+      nonNegotiables: [...nonNegotiablesSet],
       conflicts,
     };
   };
