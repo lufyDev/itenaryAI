@@ -1,11 +1,29 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+export interface ItineraryDay {
+  day: number;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  stay: string;
+  estimatedCostPerPerson: number;
+}
+
+export interface Itinerary {
+  summary: string;
+  days: ItineraryDay[];
+  totalEstimatedCostPerPerson: number;
+  tradeOffExplanation: string;
+}
+
 export interface Trip {
   _id: string;
   organiserName: string;
   title: string;
   durationDays: number;
   members: string[];
+  aggregatedData?: object;
+  itinerary?: Itinerary;
   surveyLink?: string;
 }
 
@@ -53,6 +71,30 @@ export async function submitSurvey(tripId: string, data: SurveyData) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Failed to submit survey");
+  }
+  return res.json();
+}
+
+export async function aggregateTrip(tripId: string): Promise<Trip> {
+  const res = await fetch(`${API_URL}/api/trips/${tripId}/aggregate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to aggregate data");
+  }
+  return res.json();
+}
+
+export async function generateTripItinerary(
+  tripId: string
+): Promise<Itinerary> {
+  const res = await fetch(`${API_URL}/api/trips/${tripId}/generate`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to generate itinerary");
   }
   return res.json();
 }

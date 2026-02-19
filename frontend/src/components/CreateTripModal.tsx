@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Copy, Check, ExternalLink } from "lucide-react";
+import { X, Loader2, Copy, Check, ExternalLink, LayoutDashboard } from "lucide-react";
+import Link from "next/link";
 import { createTrip } from "@/lib/api";
 
 export default function CreateTripModal({
@@ -16,7 +17,10 @@ export default function CreateTripModal({
     durationDays: 3,
   });
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ surveyLink: string } | null>(null);
+  const [result, setResult] = useState<{
+    _id: string;
+    surveyLink: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
@@ -147,7 +151,7 @@ export default function CreateTripModal({
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
+                className="space-y-5"
               >
                 <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
                   <p className="text-emerald-400 text-sm font-semibold mb-1">
@@ -174,13 +178,22 @@ export default function CreateTripModal({
                   </div>
                 </div>
 
-                <a
-                  href={result.surveyLink}
-                  className="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all flex items-center justify-center gap-2"
-                >
-                  Fill Your Preferences
-                  <ExternalLink className="w-4 h-4" />
-                </a>
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    href={`/trip/${result._id}`}
+                    className="py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-amber-500/25 transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </Link>
+                  <a
+                    href={result.surveyLink}
+                    className="py-3 px-4 bg-stone-800 border border-stone-700 text-white font-semibold rounded-xl hover:bg-stone-700 transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Fill Survey
+                  </a>
+                </div>
               </motion.div>
             )}
           </div>
