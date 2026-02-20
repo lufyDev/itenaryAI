@@ -2,7 +2,7 @@ const express = require("express");
 const Trip = require("../models/Trip");
 const Member = require("../models/Member");
 const { aggregateTripData } = require("../services/aggregationService");
-const { generateItinerary } = require("../services/plannerService");
+const { runPlanningAgent } = require("../services/plannerService");
 
 const router = express.Router();
 
@@ -69,7 +69,7 @@ router.post("/:tripId/generate", async (req, res) => {
         });
       }
   
-      const itinerary = await generateItinerary(
+      const itinerary = await runPlanningAgent(
         trip,
         trip.aggregatedData
       );

@@ -1,10 +1,43 @@
 const OpenAI = require("openai");
+const { evaluateItinerary } = require("./criticService");
+
+const runPlanningAgent = async (trip, aggregatedData) => {
+
+  let attempt = 0;
+  const MAX_ATTEMPTS = 3;
+  let feedback = "";
+
+  while (attempt < MAX_ATTEMPTS) {
+
+    const itinerary = await generateItinerary(
+      trip,
+      aggregatedData,
+      feedback
+    );
+
+    const evaluation = await evaluateItinerary(
+      itinerary,
+      aggregatedData,
+      trip.durationDays
+    );
+
+    if (evaluation.isValid) {
+      return itinerary;
+    }
+
+    feedback = evaluation.feedback;
+    attempt++;
+  }
+
+  throw new Error("Agent failed to produce valid itinerary becuase:" + feedback);
+};
+
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const generateItinerary = async (trip, aggregatedData) => {
+const generateItinerary = async (trip, aggregatedData, criticFeedback = "") => {
     const systemPrompt = `
 You are an expert travel planner AI.
 
@@ -37,6 +70,9 @@ Output format:
 `;
 
     const userPrompt = `
+Previous Feedback From Evaluator:
+${criticFeedback}
+
 Trip Title: ${trip.title}
 Duration: ${trip.durationDays} days
 
@@ -56,4 +92,4 @@ ${JSON.stringify(aggregatedData, null, 2)}
     return JSON.parse(response.choices[0].message.content);
 };
 
-module.exports = { generateItinerary };
+module.exports = { runPlanningAgent };
