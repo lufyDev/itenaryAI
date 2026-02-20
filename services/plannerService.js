@@ -25,11 +25,11 @@ const runPlanningAgent = async (trip, aggregatedData) => {
       return itinerary;
     }
 
-    feedback = evaluation.feedback;
+    feedback = evaluation.repairInstructions;
     attempt++;
   }
 
-  throw new Error("Agent failed to produce valid itinerary becuase:" + feedback);
+  throw new Error("Agent failed to produce valid itinerary becuase:" + JSON.stringify(feedback));
 };
 
 
@@ -37,7 +37,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const generateItinerary = async (trip, aggregatedData, criticFeedback = "") => {
+const generateItinerary = async (trip, aggregatedData, repairInstructions = null) => {
     const systemPrompt = `
 You are an expert travel planner AI.
 
@@ -70,8 +70,8 @@ Output format:
 `;
 
     const userPrompt = `
-Previous Feedback From Evaluator:
-${criticFeedback}
+Repair Instructions From Evaluator:
+${JSON.stringify(repairInstructions)}
 
 Trip Title: ${trip.title}
 Duration: ${trip.durationDays} days
