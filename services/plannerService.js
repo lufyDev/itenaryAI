@@ -1,34 +1,186 @@
 const OpenAI = require("openai");
 const { evaluateItinerary } = require("./criticService");
-const { researchDestination } = require("./tools/destinationResearchTool");
+const { tools } = require("./tools/toolRegistry");
 
-const runPlanningAgent = async (trip, aggregatedData) => {
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-  // ✅ Observe environment ONCE
-  const destinationInsights =
-    await researchDestination(
-      trip.title,
-      aggregatedData.budget.recommended
+/* ---------------------------------- */
+/* TOOL DESCRIPTION HELPER */
+/* ---------------------------------- */
+
+const buildToolDescriptions = (tools) => {
+  return Object.entries(tools)
+    .map(
+      ([name, tool]) =>
+        `${name}: ${tool.description}`
+    )
+    .join("\n");
+};
+
+/* ---------------------------------- */
+/* CORE AGENT THINK LOOP */
+/* ---------------------------------- */
+
+const runAutonomousPlanner = async (
+  trip,
+  aggregatedData,
+  repairInstructions = null,
+  sharedToolResults = {}
+) => {
+
+  // Agent memory / context
+  let context = {
+    trip,
+    aggregatedData,
+    repairInstructions,
+    toolResults: sharedToolResults,
+  };
+
+  const MAX_STEPS = 5;
+
+  for (let step = 0; step < MAX_STEPS; step++) {
+
+    const systemPrompt = `
+    You are an autonomous travel planning agent.
+    
+    You MUST follow this decision process:
+    
+    STEP 1:
+    Check if destination knowledge exists in toolResults.
+    
+    STEP 2:
+    If destination information is missing,
+    you MUST call the researchDestination tool FIRST.
+    
+    STEP 3:
+    Only AFTER receiving tool results,
+    you may finalize the itinerary.
+    
+    ---
+    
+    Available Tools:
+    ${buildToolDescriptions(tools)}
+    
+    ---
+    
+    Respond with valid JSON in ONLY ONE of these formats.
+    
+    TO USE A TOOL:
+    
+    {
+      "action": "researchDestination",
+      "args": {
+        "destination": "<trip destination>",
+        "budget": number
+      }
+    }
+    
+    OR
+    
+    TO FINALIZE:
+    
+    {
+      "final": true,
+      "itinerary": { ... }
+    }
+    
+    DO NOT finalize without using tools first.
+    `;
+
+
+    const response =
+      await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.3,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: JSON.stringify(context),
+          },
+        ],
+      });
+
+    const output = JSON.parse(
+      response.choices[0].message.content
     );
+
+    /* ---------- TOOL CALL ---------- */
+
+    if (output.action) {
+
+      const tool = tools[output.action];
+
+      if (!tool) {
+        throw new Error(
+          `Unknown tool requested: ${output.action}`
+        );
+      }
+
+      const result =
+        await tool.execute(output.args);
+
+      sharedToolResults[output.action] = result;
+      context.toolResults = sharedToolResults;
+      
+      continue;
+    }
+
+    // FINAL ANSWER
+    if (output.final) {
+      return output.itinerary;
+    }
+
+
+  }
+
+  throw new Error(
+    "Agent exceeded reasoning steps"
+  );
+};
+
+/* ---------------------------------- */
+/* PLANNER + CRITIC LOOP */
+/* ---------------------------------- */
+
+const runPlanningAgent = async (
+  trip,
+  aggregatedData
+) => {
 
   let attempt = 0;
   const MAX_ATTEMPTS = 3;
+
   let repairInstructions = null;
+  // ✅ Persistent agent memory
+  let sharedToolResults = {};
 
   while (attempt < MAX_ATTEMPTS) {
 
-    const itinerary = await generateItinerary(
-      trip,
-      aggregatedData,
-      repairInstructions,
-      destinationInsights
+    console.log(
+      `Planning Attempt ${attempt + 1}`
     );
 
-    const evaluation = await evaluateItinerary(
-      itinerary,
-      aggregatedData,
-      trip.durationDays
-    );
+    const itinerary =
+      await runAutonomousPlanner(
+        trip,
+        aggregatedData,
+        repairInstructions,
+        sharedToolResults
+      );
+
+    const evaluation =
+      await evaluateItinerary(
+        itinerary,
+        aggregatedData,
+        trip.durationDays
+      );
 
     if (evaluation.isValid) {
       return itinerary;
@@ -40,73 +192,9 @@ const runPlanningAgent = async (trip, aggregatedData) => {
     attempt++;
   }
 
-  throw new Error("Agent failed because of the following reasons: " + JSON.stringify(evaluation.violations));
-};
-
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const generateItinerary = async (trip, aggregatedData, repairInstructions = null, destinationInsights = null) => {
-  const systemPrompt = `
-You are an expert travel planner AI.
-
-Your job:
-Create a balanced trip itinerary based on group constraints.
-
-Strict rules:
-- Respect budget limits
-- Respect non-negotiables
-- Address conflicts fairly
-- Stay within durationDays
-- Output STRICT JSON only (no explanation outside JSON)
-
-Output format:
-{
-  "summary": string,
-  "days": [
-    {
-      "day": number,
-      "morning": string,
-      "afternoon": string,
-      "evening": string,
-      "stay": string,
-      "estimatedCostPerPerson": number
-    }
-  ],
-  "totalEstimatedCostPerPerson": number,
-  "tradeOffExplanation": string
-}
-`;
-
-  const userPrompt = `
-Repair Instructions From Evaluator:
-${JSON.stringify(repairInstructions)}
-
-Destination Research Data:
-${JSON.stringify(destinationInsights)}
-
-Trip Title: ${trip.title}
-Duration: ${trip.durationDays} days
-
-Aggregated Group Data:
-${JSON.stringify(aggregatedData, null, 2)}
-`;
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.4,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-  });
-
-  const raw = response.choices[0].message.content;
-  const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  return JSON.parse(cleaned);
+  throw new Error(
+    "Agent failed after retries"
+  );
 };
 
 module.exports = { runPlanningAgent };
