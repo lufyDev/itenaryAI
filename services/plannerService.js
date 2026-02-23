@@ -45,18 +45,26 @@ const runAutonomousPlanner = async (
     const systemPrompt = `
     You are an autonomous travel planning agent.
     
-    You MUST follow this decision process:
+    Goal:
+    Create a realistic itinerary grounded in verified data.
     
-    STEP 1:
-    Check if destination knowledge exists in toolResults.
+    You may use tools to gather missing information.
     
-    STEP 2:
-    If destination information is missing,
-    you MUST call the researchDestination tool FIRST.
+    Required Knowledge Before Finalizing:
     
-    STEP 3:
-    Only AFTER receiving tool results,
-    you may finalize the itinerary.
+    - destination insights
+    - stay cost estimate
+    - travel cost estimate
+    
+    Check toolResults carefully.
+    
+    If ANY required information is missing,
+    call the appropriate tool.
+    
+    If ALL required information exists,
+    you MUST finalize the itinerary.
+    
+    DO NOT call tools again once all data exists.
     
     ---
     
@@ -65,28 +73,23 @@ const runAutonomousPlanner = async (
     
     ---
     
-    Respond with valid JSON in ONLY ONE of these formats.
-    
+    Respond with valid JSON ONLY using ONE of these formats.
+
     TO USE A TOOL:
-    
+
     {
-      "action": "researchDestination",
-      "args": {
-        "destination": "<trip destination>",
-        "budget": number
-      }
+      "type": "tool",
+      "tool": "toolName",
+      "args": {}
     }
-    
-    OR
-    
+
     TO FINALIZE:
-    
+
     {
-      "final": true,
-      "itinerary": { ... }
+      "type": "final",
+      "itinerary": {...}
     }
-    
-    DO NOT finalize without using tools first.
+
     `;
 
 
@@ -102,8 +105,25 @@ const runAutonomousPlanner = async (
           },
           {
             role: "user",
-            content: JSON.stringify(context),
-          },
+            content: `
+          CURRENT TASK STATE
+          
+          Trip:
+          ${JSON.stringify(context.trip, null, 2)}
+          
+          Aggregated Group Data:
+          ${JSON.stringify(context.aggregatedData, null, 2)}
+          
+          Existing Tool Results:
+          ${JSON.stringify(context.toolResults, null, 2)}
+          
+          Repair Instructions:
+          ${JSON.stringify(context.repairInstructions, null, 2)}
+          
+          Decide the NEXT BEST ACTION.
+          `,
+          }
+          ,
         ],
       });
 
@@ -113,27 +133,45 @@ const runAutonomousPlanner = async (
 
     /* ---------- TOOL CALL ---------- */
 
-    if (output.action) {
+    if (output.type === "tool") {
 
-      const tool = tools[output.action];
+      if (sharedToolResults[output.tool]) {
+        console.log(
+          "Tool already executed, skipping."
+        );
+        continue;
+      }
+
+      const tool = tools[output.tool];
 
       if (!tool) {
         throw new Error(
-          `Unknown tool requested: ${output.action}`
+          `Unknown tool requested: ${output.tool}`
         );
       }
 
       const result =
         await tool.execute(output.args);
 
-      sharedToolResults[output.action] = result;
+      sharedToolResults[output.tool] = result;
       context.toolResults = sharedToolResults;
-      
+
       continue;
     }
 
+    if (
+      context.toolResults.researchDestination &&
+      context.toolResults.estimateStayCost &&
+      context.toolResults.estimateTravelCost
+    ) {
+      console.log(
+        "All tools gathered. Requesting finalize."
+      );
+    }
+    
+
     // FINAL ANSWER
-    if (output.final) {
+    if (output.type === "final") {
       return output.itinerary;
     }
 
