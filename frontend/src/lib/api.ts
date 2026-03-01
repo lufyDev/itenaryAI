@@ -86,19 +86,6 @@ export async function aggregateTrip(tripId: string): Promise<Trip> {
   return res.json();
 }
 
-export async function generateTripItinerary(
-  tripId: string
-): Promise<Itinerary> {
-  const res = await fetch(`${API_URL}/api/trips/${tripId}/generate`, {
-    method: "POST",
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to generate itinerary");
-  }
-  return res.json();
-}
-
 export interface StreamEvent {
   node: string;
   state: {
