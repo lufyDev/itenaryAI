@@ -20,6 +20,8 @@ export interface Trip {
   _id: string;
   organiserName: string;
   title: string;
+  source: string;
+  destination: string;
   durationDays: number;
   members: string[];
   aggregatedData?: object;
@@ -39,6 +41,8 @@ export interface SurveyData {
 export async function createTrip(data: {
   organiserName: string;
   title: string;
+  source: string;
+  destination: string;
   durationDays: number;
 }): Promise<Trip & { surveyLink: string }> {
   const res = await fetch(`${API_URL}/api/trips/create`, {

@@ -1,4 +1,4 @@
-const aggregateTripData = (members) => {
+const aggregateTripData = (members, tripInfo = {}) => {
     if (!members.length) {
       return null;
     }
@@ -67,6 +67,8 @@ const aggregateTripData = (members) => {
     }
   
     return {
+      source: tripInfo.source || null,
+      destination: tripInfo.destination || null,
       groupSize: members.length,
       budget: {
         min: minBudget,

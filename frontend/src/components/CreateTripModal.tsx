@@ -14,6 +14,8 @@ export default function CreateTripModal({
   const [form, setForm] = useState({
     organiserName: "",
     title: "",
+    source: "",
+    destination: "",
     durationDays: 3,
   });
   const [loading, setLoading] = useState(false);
@@ -108,6 +110,39 @@ export default function CreateTripModal({
                     placeholder="e.g. Jibhi Weekend Getaway"
                     className="w-full px-4 py-3 rounded-xl bg-stone-800 border border-stone-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Source
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.source}
+                      onChange={(e) =>
+                        setForm({ ...form, source: e.target.value })
+                      }
+                      placeholder="e.g. Delhi"
+                      className="w-full px-4 py-3 rounded-xl bg-stone-800 border border-stone-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Destination
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={form.destination}
+                      onChange={(e) =>
+                        setForm({ ...form, destination: e.target.value })
+                      }
+                      placeholder="e.g. Jibhi"
+                      className="w-full px-4 py-3 rounded-xl bg-stone-800 border border-stone-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
+                    />
+                  </div>
                 </div>
 
                 <div>

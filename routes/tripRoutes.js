@@ -7,11 +7,13 @@ const router = express.Router();
 
 router.post("/create", async (req, res) => {
   try {
-    const { organiserName, title, durationDays } = req.body;
+    const { organiserName, title, source, destination, durationDays } = req.body;
 
     const trip = await Trip.create({
       organiserName,
       title,
+      source,
+      destination,
       durationDays,
     });
 
@@ -39,11 +41,19 @@ router.get("/:tripId", async (req, res) => {
 router.post("/:tripId/aggregate", async (req, res) => {
     try {
       const { tripId } = req.params;
-  
+
+      const trip = await Trip.findById(tripId);
+      if (!trip) {
+        return res.status(404).json({ message: "Trip not found" });
+      }
+
       const members = await Member.find({ tripId });
-  
-      const aggregatedData = aggregateTripData(members);
-  
+
+      const aggregatedData = aggregateTripData(members, {
+        source: trip.source,
+        destination: trip.destination,
+      });
+
       const updatedTrip = await Trip.findByIdAndUpdate(
         tripId,
         { aggregatedData },
@@ -94,7 +104,12 @@ router.post("/:tripId/generate-stream", async (req, res) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          trip: { title: trip.title, durationDays: trip.durationDays },
+          trip: {
+            title: trip.title,
+            source: trip.source,
+            destination: trip.destination,
+            durationDays: trip.durationDays,
+          },
           aggregated_data: trip.aggregatedData,
         }),
         signal: controller.signal,

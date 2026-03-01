@@ -9,6 +9,14 @@ const tripSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  source: {
+    type: String,
+    required: true,
+  },
+  destination: {
+    type: String,
+    required: true,
+  },
   durationDays: {
     type: Number,
     required: true,

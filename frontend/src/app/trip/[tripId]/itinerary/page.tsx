@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Compass, Loader2, AlertTriangle, Clock } from "lucide-react";
+import { Compass, Loader2, AlertTriangle, Clock, MapPin } from "lucide-react";
 import { getTrip, type Trip } from "@/lib/api";
 import ItineraryView from "@/components/ItineraryView";
 
@@ -100,6 +100,12 @@ export default function SharedItineraryPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
             {trip.title}
           </h1>
+          <div className="flex items-center gap-2 text-slate-400 text-sm mt-1 mb-1">
+            <MapPin className="w-4 h-4 text-amber-400/60" />
+            <span className="text-slate-300">{trip.source}</span>
+            <span className="text-slate-600">&rarr;</span>
+            <span className="text-slate-300">{trip.destination}</span>
+          </div>
           <p className="text-slate-500">
             {trip.durationDays} days &middot; Organized by{" "}
             <span className="text-slate-300">{trip.organiserName}</span>
