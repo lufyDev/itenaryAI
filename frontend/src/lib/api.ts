@@ -98,3 +98,76 @@ export async function generateTripItinerary(
   }
   return res.json();
 }
+
+export interface StreamEvent {
+  node: string;
+  state: {
+    itinerary?: Itinerary;
+    repair_instructions?: string;
+    tool_results?: unknown;
+    attempt_count?: number;
+  };
+  error?: string;
+}
+
+export async function generateTripItineraryStream(
+  tripId: string,
+  onEvent: (event: StreamEvent) => void,
+  onDone: () => void,
+  onError: (error: Error) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/trips/${tripId}/generate-stream`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to start itinerary stream");
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("No readable stream available");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split("\n\n");
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        const line = part.trim();
+        if (!line.startsWith("data:")) continue;
+
+        const payload = line.slice(5).trim();
+
+        if (payload === "[DONE]") {
+          onDone();
+          return;
+        }
+
+        try {
+          const parsed: StreamEvent = JSON.parse(payload);
+          if (parsed.error) {
+            onError(new Error(parsed.error));
+            return;
+          }
+          onEvent(parsed);
+        } catch {
+          // skip non-JSON payloads
+        }
+      }
+    }
+
+    onDone();
+  } catch (err) {
+    onError(err instanceof Error ? err : new Error("Stream interrupted"));
+  } finally {
+    reader.releaseLock();
+  }
+}

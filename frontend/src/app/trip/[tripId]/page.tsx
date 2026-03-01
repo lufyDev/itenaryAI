@@ -19,17 +19,42 @@ import {
 import {
   getTrip,
   aggregateTrip,
-  generateTripItinerary,
+  generateTripItineraryStream,
   type Trip,
+  type Itinerary,
+  type StreamEvent,
 } from "@/lib/api";
 import ItineraryView from "@/components/ItineraryView";
 
-const GENERATING_STEPS = [
-  "Crunching everyone's preferences...",
-  "Detecting conflicts & trade-offs...",
-  "Searching for the best stays...",
-  "Building your day-by-day plan...",
-];
+interface ProgressStep {
+  label: string;
+}
+
+function completedLabelForNode(node: string, hasItinerary: boolean): string {
+  switch (node) {
+    case "tool":
+      return "Retrieved travel knowledge";
+    case "planner":
+      return hasItinerary ? "Generated itinerary" : "Analyzed requirements";
+    case "critic":
+      return "Reviewed itinerary";
+    default:
+      return `Processed ${node}`;
+  }
+}
+
+function nextActivityForNode(node: string, hasItinerary: boolean): string {
+  switch (node) {
+    case "planner":
+      return hasItinerary ? "Reviewing itinerary..." : "Retrieving travel knowledge...";
+    case "tool":
+      return "Generating itinerary...";
+    case "critic":
+      return "Finalizing...";
+    default:
+      return "Processing...";
+  }
+}
 
 export default function TripDashboard() {
   const params = useParams();
@@ -38,7 +63,8 @@ export default function TripDashboard() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [generatingStep, setGeneratingStep] = useState(0);
+  const [doneSteps, setDoneSteps] = useState<ProgressStep[]>([]);
+  const [activeLabel, setActiveLabel] = useState("");
   const [error, setError] = useState("");
   const [copiedSurvey, setCopiedSurvey] = useState(false);
   const [copiedItinerary, setCopiedItinerary] = useState(false);
@@ -54,26 +80,47 @@ export default function TripDashboard() {
     );
   }, [tripId]);
 
-  // Step animation while generating
-  useEffect(() => {
-    if (!generating) return;
-    const interval = setInterval(() => {
-      setGeneratingStep((prev) => (prev + 1) % GENERATING_STEPS.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [generating]);
-
   const handleGenerate = async () => {
     setGenerating(true);
-    setGeneratingStep(0);
+    setDoneSteps([]);
+    setActiveLabel("Aggregating preferences...");
     setError("");
+
+    let latestItinerary: Itinerary | null = null;
+
     try {
       await aggregateTrip(tripId);
-      const itinerary = await generateTripItinerary(tripId);
-      setTrip((prev) => (prev ? { ...prev, itinerary } : prev));
+      setDoneSteps([{ label: "Aggregated preferences" }]);
+      setActiveLabel("Analyzing requirements...");
+
+      await generateTripItineraryStream(
+        tripId,
+        (event: StreamEvent) => {
+          const hasItinerary = !!event.state?.itinerary;
+          if (hasItinerary) latestItinerary = event.state.itinerary!;
+
+          const done = completedLabelForNode(event.node, hasItinerary);
+          const next = nextActivityForNode(event.node, hasItinerary);
+
+          setDoneSteps((prev) => [...prev, { label: done }]);
+          setActiveLabel(next);
+        },
+        () => {
+          setActiveLabel("");
+          if (latestItinerary) {
+            setTrip((prev) =>
+              prev ? { ...prev, itinerary: latestItinerary! } : prev
+            );
+          }
+          setGenerating(false);
+        },
+        (err: Error) => {
+          setError(err.message || "Generation failed");
+          setGenerating(false);
+        }
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
-    } finally {
       setGenerating(false);
     }
   };
@@ -197,7 +244,7 @@ export default function TripDashboard() {
 
         {/* Dynamic Section: Generating / Itinerary / Waiting */}
         {generating ? (
-          <GeneratingAnimation step={generatingStep} />
+          <GeneratingAnimation doneSteps={doneSteps} activeLabel={activeLabel} />
         ) : trip?.itinerary ? (
           <motion.div
             initial={{ opacity: 0 }}
@@ -298,7 +345,13 @@ export default function TripDashboard() {
   );
 }
 
-function GeneratingAnimation({ step }: { step: number }) {
+function GeneratingAnimation({
+  doneSteps,
+  activeLabel,
+}: {
+  doneSteps: ProgressStep[];
+  activeLabel: string;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -319,37 +372,35 @@ function GeneratingAnimation({ step }: { step: number }) {
         </h3>
 
         <div className="space-y-3.5 text-left">
-          {GENERATING_STEPS.map((text, i) => (
+          {doneSteps.map((step, i) => (
             <motion.div
               key={i}
-              animate={{ opacity: i <= step ? 1 : 0.25 }}
-              transition={{ duration: 0.4 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
               className="flex items-center gap-3"
             >
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                  i < step
-                    ? "bg-emerald-500/20 text-emerald-400"
-                    : i === step
-                      ? "bg-amber-500/20 text-amber-400"
-                      : "bg-stone-800 text-stone-600"
-                }`}
-              >
-                {i < step ? (
-                  <Check className="w-3.5 h-3.5" />
-                ) : i === step ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <span className="text-[11px] font-medium">{i + 1}</span>
-                )}
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 bg-emerald-500/20 text-emerald-400">
+                <Check className="w-3.5 h-3.5" />
               </div>
-              <span
-                className={`text-sm ${i <= step ? "text-slate-300" : "text-slate-600"}`}
-              >
-                {text}
-              </span>
+              <span className="text-sm text-slate-300">{step.label}</span>
             </motion.div>
           ))}
+
+          {activeLabel && (
+            <motion.div
+              key={`active-${doneSteps.length}`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex items-center gap-3"
+            >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 bg-amber-500/20 text-amber-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              </div>
+              <span className="text-sm text-slate-300">{activeLabel}</span>
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.div>
