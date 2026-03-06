@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 
 const tripSchema = new mongoose.Schema({
+  organiser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   organiserName: {
     type: String,
     required: true,

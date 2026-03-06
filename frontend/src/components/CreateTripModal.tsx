@@ -5,14 +5,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Copy, Check, ExternalLink, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { createTrip } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreateTripModal({
   onClose,
 }: {
   onClose: () => void;
 }) {
+  const { token } = useAuth();
   const [form, setForm] = useState({
-    organiserName: "",
     title: "",
     source: "",
     destination: "",
@@ -28,10 +29,14 @@ export default function CreateTripModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) {
+      setError("You must be signed in to create a trip.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      const data = await createTrip(form);
+      const data = await createTrip(form, token);
       setResult(data);
     } catch {
       setError("Failed to create trip. Is the backend running?");
@@ -80,22 +85,6 @@ export default function CreateTripModal({
           <div className="p-6">
             {!result ? (
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={form.organiserName}
-                    onChange={(e) =>
-                      setForm({ ...form, organiserName: e.target.value })
-                    }
-                    placeholder="e.g. Vishal"
-                    className="w-full px-4 py-3 rounded-xl bg-stone-800 border border-stone-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
-                  />
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     Trip Title
