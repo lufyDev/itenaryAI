@@ -2,15 +2,46 @@ const express = require("express");
 const Trip = require("../models/Trip");
 const Member = require("../models/Member");
 const { aggregateTripData } = require("../services/aggregationService");
+const { authRequired } = require("../middleware/auth");
 
 const router = express.Router();
 
-router.post("/create", async (req, res) => {
+router.get("/my-trips", authRequired, async (req, res) => {
   try {
-    const { organiserName, title, source, destination, durationDays } = req.body;
+    const trips = await Trip.find({ organiser: req.user.userId })
+      .select("title source destination durationDays members itinerary createdAt")
+      .sort({ createdAt: -1 });
+
+    const tripsWithStatus = trips.map((t) => {
+      const obj = t.toObject();
+      let status = "draft";
+      if (obj.itinerary) status = "itinerary_ready";
+      else if (obj.members?.length > 0) status = "collecting_responses";
+      return {
+        _id: obj._id,
+        title: obj.title,
+        source: obj.source,
+        destination: obj.destination,
+        durationDays: obj.durationDays,
+        memberCount: obj.members?.length || 0,
+        status,
+        createdAt: obj.createdAt,
+      };
+    });
+
+    res.json(tripsWithStatus);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/create", authRequired, async (req, res) => {
+  try {
+    const { title, source, destination, durationDays } = req.body;
 
     const trip = await Trip.create({
-      organiserName,
+      organiser: req.user.userId,
+      organiserName: req.user.name,
       title,
       source,
       destination,
@@ -38,41 +69,49 @@ router.get("/:tripId", async (req, res) => {
   }
 });
 
-router.post("/:tripId/aggregate", async (req, res) => {
-    try {
-      const { tripId } = req.params;
+router.post("/:tripId/aggregate", authRequired, async (req, res) => {
+  try {
+    const { tripId } = req.params;
 
-      const trip = await Trip.findById(tripId);
-      if (!trip) {
-        return res.status(404).json({ message: "Trip not found" });
-      }
-
-      const members = await Member.find({ tripId });
-
-      const aggregatedData = aggregateTripData(members, {
-        source: trip.source,
-        destination: trip.destination,
-      });
-
-      const updatedTrip = await Trip.findByIdAndUpdate(
-        tripId,
-        { aggregatedData },
-        { new: true }
-      );
-  
-      res.json(updatedTrip);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
     }
-});  
 
-router.post("/:tripId/generate-stream", async (req, res) => {
+    if (trip.organiser.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Only the organiser can aggregate data" });
+    }
+
+    const members = await Member.find({ tripId });
+
+    const aggregatedData = aggregateTripData(members, {
+      source: trip.source,
+      destination: trip.destination,
+    });
+
+    const updatedTrip = await Trip.findByIdAndUpdate(
+      tripId,
+      { aggregatedData },
+      { new: true }
+    );
+
+    res.json(updatedTrip);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.post("/:tripId/generate-stream", authRequired, async (req, res) => {
   try {
     const { tripId } = req.params;
     const trip = await Trip.findById(tripId);
 
     if (!trip) {
       return res.status(404).json({ message: "Trip not found" });
+    }
+
+    if (trip.organiser.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Only the organiser can generate itineraries" });
     }
 
     if (!trip.aggregatedData) {
@@ -167,7 +206,6 @@ router.post("/:tripId/generate-stream", async (req, res) => {
       }
     }
 
-    // Stream ended without [DONE] — flush remaining buffer
     if (buffer.trim()) {
       const line = buffer.trim();
       if (line.startsWith("data:")) {
@@ -210,6 +248,5 @@ router.post("/:tripId/generate-stream", async (req, res) => {
     res.end();
   }
 });
-  
 
 module.exports = router;

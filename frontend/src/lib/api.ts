@@ -18,6 +18,7 @@ export interface Itinerary {
 
 export interface Trip {
   _id: string;
+  organiser?: string;
   organiserName: string;
   title: string;
   source: string;
@@ -29,6 +30,17 @@ export interface Trip {
   surveyLink?: string;
 }
 
+export interface TripSummary {
+  _id: string;
+  title: string;
+  source: string;
+  destination: string;
+  durationDays: number;
+  memberCount: number;
+  status: "draft" | "collecting_responses" | "itinerary_ready";
+  createdAt: string;
+}
+
 export interface SurveyData {
   travelStyle: string;
   foodPreference: string;
@@ -38,16 +50,66 @@ export interface SurveyData {
   nonNegotiables: string[];
 }
 
-export async function createTrip(data: {
-  organiserName: string;
-  title: string;
-  source: string;
-  destination: string;
-  durationDays: number;
-}): Promise<Trip & { surveyLink: string }> {
-  const res = await fetch(`${API_URL}/api/trips/create`, {
+export interface AuthUser {
+  _id: string;
+  name: string;
+  email: string;
+  picture?: string;
+}
+
+function authHeaders(token: string): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+export async function loginWithGoogle(
+  credential: string
+): Promise<{ token: string; user: AuthUser }> {
+  const res = await fetch(`${API_URL}/api/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Login failed");
+  }
+  return res.json();
+}
+
+export async function getMe(token: string): Promise<AuthUser> {
+  const res = await fetch(`${API_URL}/api/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Not authenticated");
+  return res.json();
+}
+
+export async function getMyTrips(token: string): Promise<TripSummary[]> {
+  const res = await fetch(`${API_URL}/api/trips/my-trips`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || "Failed to fetch trips");
+  }
+  return res.json();
+}
+
+export async function createTrip(
+  data: {
+    title: string;
+    source: string;
+    destination: string;
+    durationDays: number;
+  },
+  token: string
+): Promise<Trip & { surveyLink: string }> {
+  const res = await fetch(`${API_URL}/api/trips/create`, {
+    method: "POST",
+    headers: authHeaders(token),
     body: JSON.stringify(data),
   });
   if (!res.ok) {
@@ -79,9 +141,13 @@ export async function submitSurvey(tripId: string, data: SurveyData) {
   return res.json();
 }
 
-export async function aggregateTrip(tripId: string): Promise<Trip> {
+export async function aggregateTrip(
+  tripId: string,
+  token: string
+): Promise<Trip> {
   const res = await fetch(`${API_URL}/api/trips/${tripId}/aggregate`, {
     method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -103,12 +169,14 @@ export interface StreamEvent {
 
 export async function generateTripItineraryStream(
   tripId: string,
+  token: string,
   onEvent: (event: StreamEvent) => void,
   onDone: () => void,
   onError: (error: Error) => void
 ): Promise<void> {
   const res = await fetch(`${API_URL}/api/trips/${tripId}/generate-stream`, {
     method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {

@@ -16,6 +16,9 @@ import {
   AlertTriangle,
   ArrowLeft,
   MapPin,
+  LogOut,
+  LayoutDashboard,
+  ShieldAlert,
 } from "lucide-react";
 import {
   getTrip,
@@ -25,6 +28,7 @@ import {
   type Itinerary,
   type StreamEvent,
 } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import ItineraryView from "@/components/ItineraryView";
 
 interface ProgressStep {
@@ -60,6 +64,7 @@ function nextActivityForNode(node: string, hasItinerary: boolean): string {
 export default function TripDashboard() {
   const params = useParams();
   const tripId = params.tripId as string;
+  const { user, token, loading: authLoading, signOut } = useAuth();
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +75,8 @@ export default function TripDashboard() {
   const [copiedSurvey, setCopiedSurvey] = useState(false);
   const [copiedItinerary, setCopiedItinerary] = useState(false);
   const [surveyLink, setSurveyLink] = useState("");
+
+  const isOwner = !authLoading && user && trip?.organiser === user._id;
 
   useEffect(() => {
     getTrip(tripId)
@@ -82,6 +89,7 @@ export default function TripDashboard() {
   }, [tripId]);
 
   const handleGenerate = async () => {
+    if (!token) return;
     setGenerating(true);
     setDoneSteps([]);
     setActiveLabel("Aggregating preferences...");
@@ -90,12 +98,13 @@ export default function TripDashboard() {
     let latestItinerary: Itinerary | null = null;
 
     try {
-      await aggregateTrip(tripId);
+      await aggregateTrip(tripId, token);
       setDoneSteps([{ label: "Aggregated preferences" }]);
       setActiveLabel("Analyzing requirements...");
 
       await generateTripItineraryStream(
         tripId,
+        token,
         (event: StreamEvent) => {
           const hasItinerary = !!event.state?.itinerary;
           if (hasItinerary) latestItinerary = event.state.itinerary!;
@@ -139,7 +148,7 @@ export default function TripDashboard() {
     setTimeout(() => setCopiedItinerary(false), 2000);
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-950">
         <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
@@ -165,6 +174,37 @@ export default function TripDashboard() {
     );
   }
 
+  if (!isOwner) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-950 px-6">
+        <div className="max-w-md text-center">
+          <ShieldAlert className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-white mb-2">Access Denied</h1>
+          <p className="text-slate-400 mb-6">
+            Only the trip organiser can access this dashboard.
+            {!user && " Please sign in first."}
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link
+              href="/"
+              className="text-amber-400 hover:text-amber-300 text-sm font-medium"
+            >
+              &larr; Back to Home
+            </Link>
+            {user && (
+              <Link
+                href="/dashboard"
+                className="text-amber-400 hover:text-amber-300 text-sm font-medium"
+              >
+                My Dashboard
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const memberCount = trip?.members?.length || 0;
 
   return (
@@ -179,13 +219,36 @@ export default function TripDashboard() {
             <Compass className="w-5 h-5 text-amber-400" />
             ItineraryAI
           </Link>
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Home
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 text-slate-400 hover:text-white text-sm transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              My Trips
+            </Link>
+            <div className="flex items-center gap-2">
+              {user?.picture ? (
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  className="w-7 h-7 rounded-full border border-white/20"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-amber-500/30 flex items-center justify-center text-white text-xs font-bold">
+                  {user?.name.charAt(0)}
+                </div>
+              )}
+              <button
+                onClick={signOut}
+                className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
 

@@ -12,7 +12,12 @@ import {
   Globe,
   Shield,
   Zap,
+  LogOut,
+  LayoutDashboard,
 } from "lucide-react";
+import Link from "next/link";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "@/contexts/AuthContext";
 import CreateTripModal from "@/components/CreateTripModal";
 
 function seededRandom(seed: number): number {
@@ -77,6 +82,12 @@ const FEATURES = [
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const { user, loading, signIn, signOut } = useAuth();
+
+  const handleCreateTrip = () => {
+    if (!user) return;
+    setShowModal(true);
+  };
 
   return (
     <main className="bg-stone-950">
@@ -110,12 +121,60 @@ export default function Home() {
               <Compass className="w-6 h-6 text-amber-400" />
               ItineraryAI
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="px-5 py-2.5 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.08] text-white text-sm font-medium hover:bg-white/[0.15] transition-colors cursor-pointer"
-            >
-              Create Trip
-            </button>
+
+            <div className="flex items-center gap-3">
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+              ) : user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.08] text-white text-sm font-medium hover:bg-white/[0.15] transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    My Trips
+                  </Link>
+                  <button
+                    onClick={handleCreateTrip}
+                    className="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-amber-500/20 transition-all cursor-pointer"
+                  >
+                    Create Trip
+                  </button>
+                  <div className="flex items-center gap-2 ml-1">
+                    {user.picture ? (
+                      <img
+                        src={user.picture}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full border border-white/20"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-amber-500/30 flex items-center justify-center text-white text-xs font-bold">
+                        {user.name.charAt(0)}
+                      </div>
+                    )}
+                    <button
+                      onClick={signOut}
+                      className="p-2 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      title="Sign out"
+                    >
+                      <LogOut className="w-4 h-4" />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <GoogleLogin
+                  onSuccess={(response) => {
+                    if (response.credential) signIn(response.credential);
+                  }}
+                  onError={() => {}}
+                  shape="pill"
+                  theme="filled_black"
+                  size="medium"
+                  text="signin_with"
+                />
+              )}
+            </div>
           </div>
         </nav>
 
@@ -162,14 +221,32 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.36 }}
           >
-            <button
-              onClick={() => setShowModal(true)}
-              className="group inline-flex items-center gap-3 px-9 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
-            >
-              <Plus className="w-5 h-5" />
-              Plan Your Trip
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </button>
+            {user ? (
+              <button
+                onClick={handleCreateTrip}
+                className="group inline-flex items-center gap-3 px-9 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+              >
+                <Plus className="w-5 h-5" />
+                Plan Your Trip
+                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              </button>
+            ) : (
+              <div className="inline-flex flex-col items-center gap-3">
+                <GoogleLogin
+                  onSuccess={(response) => {
+                    if (response.credential) signIn(response.credential);
+                  }}
+                  onError={() => {}}
+                  shape="pill"
+                  theme="filled_black"
+                  size="large"
+                  text="signin_with"
+                />
+                <p className="text-slate-500 text-sm">
+                  Sign in with Google to start planning
+                </p>
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -356,13 +433,26 @@ export default function Home() {
           <p className="text-slate-500 text-lg mb-10">
             Create your trip, share the link, and let AI handle the rest.
           </p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="group inline-flex items-center gap-3 px-9 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
-          >
-            Start Planning
-            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-          </button>
+          {user ? (
+            <button
+              onClick={handleCreateTrip}
+              className="group inline-flex items-center gap-3 px-9 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+            >
+              Start Planning
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            </button>
+          ) : (
+            <GoogleLogin
+              onSuccess={(response) => {
+                if (response.credential) signIn(response.credential);
+              }}
+              onError={() => {}}
+              shape="pill"
+              theme="filled_black"
+              size="large"
+              text="signin_with"
+            />
+          )}
         </motion.div>
       </section>
 
