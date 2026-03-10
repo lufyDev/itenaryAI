@@ -61,7 +61,7 @@ The itinerary gets a shareable link. Anyone can view it — no login needed. Jus
 
 ## The AI (How the brain works)
 
-The AI service is a **separate microservice** ([AI Service Repo →](#)). Here's what makes it special:
+The AI service is a **separate microservice** ([AI Service Repo →](https://github.com/lufyDev/itenary_ai)). Here's what makes it special:
 
 ### Agentic Architecture
 
@@ -277,7 +277,7 @@ This aggregated data goes to the AI service as a structured input.
 - Node.js
 - MongoDB (running locally or a cloud URI)
 - Google OAuth Client ID (from Google Cloud Console)
-- The AI microservice running ([see AI service repo](#))
+- The AI microservice running ([see AI service repo](https://github.com/lufyDev/itenary_ai))
 
 ### Setup
 
@@ -329,4 +329,4 @@ Make sure the AI microservice is also running on port 8000.
 
 ## Related Repos
 
-- **AI Microservice** — [Link](#) *(the agentic AI service with tools, RAG pipeline, and planner-critic loop)*
+- **AI Microservice** — [itenary_ai](https://github.com/lufyDev/itenary_ai) *(the agentic AI service with tools, RAG pipeline, and planner-critic loop)*
