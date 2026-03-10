@@ -2,3 +2,4 @@
 .env
 .env.local
 package-lock.json
+PRODUCTION_DEPLOYMENT_GUIDE.md
