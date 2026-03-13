@@ -3,3 +3,4 @@
 .env.local
 package-lock.json
 PRODUCTION_DEPLOYMENT_GUIDE.md
+ITINERARY_AI_DEPLOYMENT_GUIDE.md
