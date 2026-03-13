@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ItineraryAI — Frontend
 
-## Getting Started
+The frontend for [ItineraryAI](https://itineraryai.in), a group trip planning system powered by agentic AI. Built with Next.js 16, React 19, Tailwind CSS 4, and Framer Motion.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Technology | Purpose |
+|-----------|---------|
+| Next.js 16 | React framework (App Router) |
+| React 19 | UI library |
+| Tailwind CSS 4 | Styling |
+| Framer Motion | Animations and transitions |
+| @react-oauth/google | Google OAuth login |
+| Lucide React | Icons |
+| TypeScript | Type safety |
+
+## Pages
+
+| Route | Auth? | Description |
+|-------|-------|-------------|
+| `/` | No | Landing page |
+| `/dashboard` | Yes | Organiser's trip list |
+| `/trip/[tripId]` | Yes | Trip dashboard (manage members, aggregate, generate) |
+| `/trip/[tripId]/itinerary` | No | Shareable itinerary view |
+| `/fillSurveyForm?tripId=...` | No | Survey form for group members |
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx                        # Landing page
+│   │   ├── layout.tsx                      # Root layout
+│   │   ├── globals.css                     # Global styles
+│   │   ├── dashboard/page.tsx              # My trips list
+│   │   ├── fillSurveyForm/page.tsx         # Survey form (no auth)
+│   │   └── trip/[tripId]/
+│   │       ├── page.tsx                    # Organiser dashboard
+│   │       └── itinerary/page.tsx          # Shareable itinerary view
+│   ├── components/
+│   │   ├── CreateTripModal.tsx             # Trip creation modal
+│   │   ├── ItineraryView.tsx               # Itinerary display component
+│   │   └── Providers.tsx                   # Context providers wrapper
+│   ├── contexts/
+│   │   └── AuthContext.tsx                 # Google auth state management
+│   └── lib/
+│       └── api.ts                          # Backend API client
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js 20+
+- Backend API running on port 8080 ([see main repo](https://github.com/lufyDev/itenaryAI))
 
-## Learn More
+### Install and Run
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Opens at [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Environment Variables
 
-## Deploy on Vercel
+Create `.env.local` in this directory:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Description |
+|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | Backend API URL. Use `http://localhost:8080` for local dev, `/api` for production (Nginx proxies to backend) |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth Client ID from [Google Cloud Console](https://console.cloud.google.com) |
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+In production, the frontend runs on port 3000 behind Nginx, managed by PM2.
+
+## How It Connects
+
+```
+Browser ──► Nginx (port 80/443)
+               │
+               ├── /           → Frontend (port 3000)
+               └── /api/*      → Backend (port 8080)
+```
+
+In development, the frontend talks directly to `http://localhost:8080`. In production, it uses `/api` and Nginx routes the request to the backend. This avoids CORS issues and keeps everything on the same domain.

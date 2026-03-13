@@ -1,5 +1,7 @@
 # ItineraryAI
 
+**Live at: [https://itineraryai.in](https://itineraryai.in)**
+
 > Planning a group trip is a nightmare. Everyone has different budget, different food taste, different vibe. Someone wants to chill, someone wants adventure. Nobody agrees on anything. Trip gets cancelled before it even starts.
 >
 > ItineraryAI fixes this. Quietly.
@@ -274,16 +276,16 @@ This aggregated data goes to the AI service as a structured input.
 ## Getting Started
 
 ### Prerequisites
-- Node.js
-- MongoDB (running locally or a cloud URI)
-- Google OAuth Client ID (from Google Cloud Console)
+- Node.js 20+
+- MongoDB (Atlas free tier or local)
+- Google OAuth Client ID (from [Google Cloud Console](https://console.cloud.google.com))
 - The AI microservice running ([see AI service repo](https://github.com/lufyDev/itenary_ai))
 
 ### Setup
 
 ```bash
 # Clone the repo
-git clone <repo-url>
+git clone git@github.com:lufyDev/itenaryAI.git
 cd itenaryAI
 
 # Install backend dependencies
@@ -291,21 +293,28 @@ npm install
 
 # Install frontend dependencies
 cd frontend && npm install && cd ..
+```
 
-# Create .env file in root
-# MONGO_URI=mongodb://localhost:27017/itenaryDB
-# JWT_SECRET=your-secret-key
-# GOOGLE_CLIENT_ID=your-google-client-id
-# FRONTEND_URL=http://localhost:3000
-# AI_SERVICE_URL=http://localhost:8000
+Create `.env` in the project root:
 
-# Create .env.local in frontend/
-# NEXT_PUBLIC_API_URL=http://localhost:8080
-# NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+```env
+MONGO_URI=mongodb+srv://your-connection-string
+JWT_SECRET=your-secret-key
+GOOGLE_CLIENT_ID=your-google-client-id
+FRONTEND_URL=http://localhost:3000
+AI_SERVICE_URL=http://localhost:8000
+```
 
-# Start MongoDB
-mongod
+Create `frontend/.env.local`:
 
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+```
+
+Run the app:
+
+```bash
 # Start backend (port 8080)
 npm run dev
 
@@ -314,6 +323,16 @@ cd frontend && npm run dev
 ```
 
 Make sure the AI microservice is also running on port 8000.
+
+### Production Deployment
+
+The app is deployed on AWS EC2 (Ubuntu 24.04) with:
+- **Nginx** as reverse proxy (handles SSL, routing)
+- **PM2** for Node.js process management (backend + frontend)
+- **systemd** for the Python AI microservice
+- **Let's Encrypt** for free SSL via Certbot
+
+
 
 ---
 
@@ -324,6 +343,16 @@ Make sure the AI microservice is also running on port 8000.
 3. **SSE streaming** — itinerary generation is streamed in real-time. You see progress (researching destinations... generating plan... AI critic reviewing...) instead of staring at a loading spinner for 2 minutes
 4. **Separate AI microservice** — the AI agent (with tools, RAG, planner-critic loop) runs independently. This backend just sends aggregated data and streams the response. Keeps things clean and independently scalable
 5. **RAG for cost saving** — the AI service caches web search results as embeddings. Popular destinations don't need fresh searches every time
+
+---
+
+## Deployment
+
+| Service | Technology | Port | Live URL |
+|---------|-----------|------|----------|
+| Frontend | Next.js 16 / React 19 | 3000 | [itineraryai.in](https://itineraryai.in) |
+| Backend API | Express.js 5 | 8080 | [itineraryai.in/api](https://itineraryai.in/api/) |
+| AI Microservice | FastAPI / Python | 8000 | Internal (same server) |
 
 ---
 
