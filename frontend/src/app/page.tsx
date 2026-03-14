@@ -39,7 +39,7 @@ const STEPS = [
     icon: <MapPin className="w-7 h-7" />,
     title: "Create & Share",
     description:
-      "Name your trip, set the duration, and get a shareable link in seconds. Send it to your WhatsApp group and you're done.",
+      "Create the trip with your source, destination, and duration, then drop the survey link in the group chat before the planning chaos starts.",
     step: "01",
     gradient: "from-amber-500 to-orange-500",
   },
@@ -47,15 +47,15 @@ const STEPS = [
     icon: <Users className="w-7 h-7" />,
     title: "Everyone Votes",
     description:
-      "Each member privately fills out their budget, food preferences, travel style, and dealbreakers. No peer pressure.",
+      "Everyone shares budget, food, travel style, activities, and non-negotiables privately, so the real preferences show up without peer pressure.",
     step: "02",
     gradient: "from-emerald-500 to-teal-500",
   },
   {
     icon: <Sparkles className="w-7 h-7" />,
-    title: "AI Plans It All",
+    title: "AI Researches & Plans",
     description:
-      "Our AI reasons through trade-offs, checks real pricing, and builds a day-by-day itinerary that respects everyone's boundaries.",
+      "We aggregate the group, detect conflicts, research transport, stays, and destination ideas, then stream back a day-by-day plan everyone can work with.",
     step: "03",
     gradient: "from-violet-500 to-purple-500",
   },
@@ -65,20 +65,116 @@ const FEATURES = [
   {
     icon: <Shield className="w-5 h-5" />,
     title: "Anonymous Preferences",
-    description: "No one sees anyone else's answers. Honest input, better trips.",
+    description:
+      "No one sees anyone else's answers, so people can be honest about budget, food, and dealbreakers.",
   },
   {
     icon: <Zap className="w-5 h-5" />,
-    title: "Instant Itineraries",
-    description: "From survey to itinerary in under a minute. No manual planning.",
+    title: "Conflict-Aware Planning",
+    description:
+      "The system spots clashes like mixed budgets or different travel styles before the itinerary is generated.",
   },
   {
     icon: <Globe className="w-5 h-5" />,
-    title: "Smart Negotiation",
+    title: "Real-World Research",
     description:
-      "AI balances luxury seekers and budget travelers with creative compromises.",
+      "The AI researches actual destinations, stays, and transport options instead of making up a fantasy trip.",
   },
 ];
+
+function GoogleSignInPanel({
+  onSignIn,
+  title,
+  subtitle,
+  width,
+  compact = false,
+  minimal = false,
+}: {
+  onSignIn: (credential: string) => void;
+  title?: string;
+  subtitle?: string;
+  width: string;
+  compact?: boolean;
+  minimal?: boolean;
+}) {
+  if (compact) {
+    return (
+      <div className="rounded-full border border-white/10 bg-white/[0.05] p-1.5 shadow-lg shadow-black/20 backdrop-blur-md">
+        <GoogleLogin
+          onSuccess={(response) => {
+            if (response.credential) onSignIn(response.credential);
+          }}
+          onError={() => {}}
+          shape="pill"
+          theme="filled_black"
+          size="medium"
+          text="signin_with"
+          width={width}
+        />
+      </div>
+    );
+  }
+
+  if (minimal) {
+    return (
+      <div className="w-full max-w-sm px-3 py-2">
+        {title ? (
+          <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-300/70">
+            {title}
+          </p>
+        ) : null}
+        <div className="flex justify-center">
+          <div className="scale-95 rounded-full bg-white/[0.05] p-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:scale-100">
+            <GoogleLogin
+              onSuccess={(response) => {
+                if (response.credential) onSignIn(response.credential);
+              }}
+              onError={() => {}}
+              shape="pill"
+              theme="filled_black"
+              size="medium"
+              text="signin_with"
+              width={width}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-md rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-6 shadow-2xl shadow-black/25 backdrop-blur-xl">
+      {title ? (
+        <div className="mb-5 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300/80">
+            {title}
+          </p>
+          {subtitle ? (
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex justify-center">
+        <div className="rounded-full border border-white/10 bg-stone-950/70 p-1.5 shadow-lg shadow-black/20">
+          <GoogleLogin
+            onSuccess={(response) => {
+              if (response.credential) onSignIn(response.credential);
+            }}
+            onError={() => {}}
+            shape="pill"
+            theme="filled_black"
+            size="large"
+            text="signin_with"
+            width={width}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
@@ -92,7 +188,7 @@ export default function Home() {
   return (
     <main className="bg-stone-950">
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex flex-col items-center justify-start pt-32 pb-16 sm:justify-center sm:pt-0 sm:pb-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-indigo-950/80 to-amber-950/50" />
 
         {STARS.map((star, i) => (
@@ -116,31 +212,32 @@ export default function Home() {
 
         {/* Nav */}
         <nav className="absolute top-0 left-0 right-0 z-20 px-6 py-5">
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-2.5 text-white font-bold text-xl">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-white font-bold text-lg sm:text-xl">
               <Compass className="w-6 h-6 text-amber-400" />
               ItineraryAI
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-end gap-2 sm:gap-3">
               {loading ? (
                 <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
               ) : user ? (
                 <>
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.08] text-white text-sm font-medium hover:bg-white/[0.15] transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 sm:px-4 rounded-full bg-white/[0.08] backdrop-blur-sm border border-white/[0.08] text-white text-sm font-medium hover:bg-white/[0.15] transition-colors"
                   >
                     <LayoutDashboard className="w-4 h-4" />
-                    My Trips
+                    <span className="sm:hidden">Trips</span>
+                    <span className="hidden sm:inline">My Trips</span>
                   </Link>
                   <button
                     onClick={handleCreateTrip}
-                    className="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-amber-500/20 transition-all cursor-pointer"
+                    className="hidden sm:inline-flex px-4 py-2.5 sm:px-5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium hover:shadow-lg hover:shadow-amber-500/20 transition-all cursor-pointer"
                   >
                     Create Trip
                   </button>
-                  <div className="flex items-center gap-2 ml-1">
+                  <div className="flex items-center gap-2 sm:ml-1">
                     {user.picture ? (
                       <img
                         src={user.picture}
@@ -163,32 +260,31 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <GoogleLogin
-                  onSuccess={(response) => {
-                    if (response.credential) signIn(response.credential);
-                  }}
-                  onError={() => {}}
-                  shape="pill"
-                  theme="filled_black"
-                  size="medium"
-                  text="signin_with"
-                />
+                <div className="hidden sm:flex sm:w-auto sm:justify-end">
+                  <GoogleSignInPanel
+                    onSignIn={(credential) => {
+                      signIn(credential);
+                    }}
+                    width="210"
+                    compact
+                  />
+                </div>
               )}
             </div>
           </div>
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="mb-8"
+            className="mb-6"
           >
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] text-amber-300/90 text-sm font-medium">
               <Sparkles className="w-3.5 h-3.5" />
-              AI-Powered Group Travel Planning
+              Built for trips that usually never happen
             </span>
           </motion.div>
 
@@ -196,12 +292,11 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.12 }}
-            className="text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-7 leading-[1.08] tracking-tight"
+            className="text-4xl sm:text-5xl md:text-[3.35rem] lg:text-[4rem] font-bold text-white mb-5 leading-[1.03] tracking-tight"
           >
-            Where Group Chaos
-            <br />
-            <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 bg-clip-text text-transparent">
-              Becomes Adventure
+            <span className="block">Where Group Trip Plans</span>
+            <span className="block bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 bg-clip-text text-transparent">
+              Finally Leave the Group Chat
             </span>
           </motion.h1>
 
@@ -209,42 +304,39 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.24 }}
-            className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed"
+            className="text-base sm:text-lg md:text-xl text-slate-400 mb-9 max-w-2xl mx-auto leading-relaxed"
           >
-            Stop drowning in WhatsApp threads. Everyone shares their preferences
-            privately, and our AI crafts the itinerary your whole group will
-            love.
+            Different budgets, different vibes, different food choices, zero
+            clarity on where to go. ItineraryAI collects honest preferences,
+            resolves the mess peacefully, and turns the group&apos;s common ground
+            into a real plan.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.36 }}
+            className="flex justify-center"
           >
             {user ? (
               <button
                 onClick={handleCreateTrip}
-                className="group inline-flex items-center gap-3 px-9 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
+                className="group inline-flex items-center gap-2.5 px-7 py-3.5 text-base sm:gap-3 sm:px-9 sm:py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold sm:text-lg rounded-full shadow-2xl shadow-amber-500/20 hover:shadow-amber-500/30 transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 Plan Your Trip
-                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
               </button>
             ) : (
-              <div className="inline-flex flex-col items-center gap-3">
-                <GoogleLogin
-                  onSuccess={(response) => {
-                    if (response.credential) signIn(response.credential);
+              <div className="inline-flex flex-col items-center">
+                <GoogleSignInPanel
+                  onSignIn={(credential) => {
+                    signIn(credential);
                   }}
-                  onError={() => {}}
-                  shape="pill"
-                  theme="filled_black"
-                  size="large"
-                  text="signin_with"
+                  title="Start Planning"
+                  width="280"
+                  minimal
                 />
-                <p className="text-slate-500 text-sm">
-                  Sign in with Google to start planning
-                </p>
               </div>
             )}
           </motion.div>
@@ -290,11 +382,11 @@ export default function Home() {
               How It Works
             </p>
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Three Steps to the Perfect Trip
+              Three Steps Between &quot;We Should Go&quot; and Actually Going
             </h2>
             <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              No more 200-message threads. No more one person doing all the
-              work.
+              No endless threads, no awkward budget debates, no one-person trip
+              planning burden.
             </p>
           </motion.div>
 
@@ -342,16 +434,18 @@ export default function Home() {
                 Why ItineraryAI
               </p>
               <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 leading-snug">
-                AI That Actually{" "}
+                We Solve the Part That Usually{" "}
                 <span className="bg-gradient-to-r from-amber-300 to-rose-300 bg-clip-text text-transparent">
-                  Understands
+                  Kills the Trip
                 </span>{" "}
-                Group Dynamics
+                Before It Starts
               </h2>
               <p className="text-slate-400 text-lg leading-relaxed mb-10">
-                Our AI doesn&apos;t just average preferences. It reasons through
-                trade-offs like a seasoned travel agent — finding creative
-                solutions that respect every member&apos;s constraints.
+                Most group trips do not fail because people do not want to
+                travel. They fail because budgets clash, preferences pull in
+                different directions, and nobody wants to play referee. We
+                collect the truth, surface the conflicts, and let AI build the
+                compromise.
               </p>
 
               <div className="space-y-5">
@@ -390,25 +484,29 @@ export default function Home() {
                 </div>
                 <div className="space-y-3 leading-relaxed">
                   <p className="text-slate-500">
-                    <span className="text-emerald-400/80">analyzing</span>{" "}
-                    5 member preferences...
+                    <span className="text-emerald-400/80">aggregating</span> 5
+                    anonymous responses...
                   </p>
                   <p className="text-slate-500">
-                    <span className="text-amber-400/80">conflict</span>{" "}
-                    &quot;Friend A wants luxury, Friend B has tight
-                    budget&quot;
+                    <span className="text-amber-400/80">detecting</span>{" "}
+                    budget and travel-style conflicts...
                   </p>
                   <p className="text-slate-500">
-                    <span className="text-violet-400/80">searching</span>{" "}
-                    boutique stays under ₹2,000/night...
+                    <span className="text-sky-400/80">planner</span> analyzing
+                    group constraints and common ground...
                   </p>
                   <p className="text-slate-500">
-                    <span className="text-emerald-400/80">found</span>{" "}
-                    &quot;The Wanderer&apos;s Nest&quot; — ₹1,200/night, 4.8★
+                    <span className="text-violet-400/80">tools</span>{" "}
+                    researching stays, transport, and destination options...
+                  </p>
+                  <p className="text-slate-500">
+                    <span className="text-cyan-400/80">critic</span> reviewing
+                    itinerary against budget and non-negotiables...
                   </p>
                   <div className="mt-4 pt-4 border-t border-stone-800">
                     <p className="text-amber-300/90">
-                      ✓ Luxury feel at budget price. Everyone&apos;s happy.
+                      ✓ Shared itinerary ready with realistic costs, clear
+                      trade-offs, and less drama.
                     </p>
                   </div>
                 </div>
@@ -428,10 +526,11 @@ export default function Home() {
           className="max-w-2xl mx-auto text-center"
         >
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-5">
-            Ready to Plan Without the Drama?
+            Make the Trip Happen Before It Becomes Another Group Joke
           </h2>
           <p className="text-slate-500 text-lg mb-10">
-            Create your trip, share the link, and let AI handle the rest.
+            Create the trip, share one link, and let the app do the peaceful
+            negotiating for you.
           </p>
           {user ? (
             <button
@@ -442,16 +541,16 @@ export default function Home() {
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </button>
           ) : (
-            <GoogleLogin
-              onSuccess={(response) => {
-                if (response.credential) signIn(response.credential);
-              }}
-              onError={() => {}}
-              shape="pill"
-              theme="filled_black"
-              size="large"
-              text="signin_with"
-            />
+            <div className="mx-auto flex justify-center">
+              <GoogleSignInPanel
+                onSignIn={(credential) => {
+                  signIn(credential);
+                }}
+                title="Start with Google"
+                subtitle="Sign in once to create trips, track responses, and generate shareable itineraries."
+                width="280"
+              />
+            </div>
           )}
         </motion.div>
       </section>
@@ -464,7 +563,7 @@ export default function Home() {
             ItineraryAI
           </div>
           <p className="text-slate-600 text-sm">
-            Built with AI to make group travel actually fun.
+            Built to turn group trip ideas into actual group trips.
           </p>
         </div>
       </footer>

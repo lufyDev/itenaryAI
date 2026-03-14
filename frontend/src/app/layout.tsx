@@ -14,20 +14,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ItineraryAI — Group Trip Planning Made Effortless",
+  title: "ItineraryAI — Stop Letting Group Trips Die in the Group Chat",
   description:
-    "Stop fighting over group trip plans. ItineraryAI collects everyone's preferences and uses AI to craft the perfect itinerary for the whole group.",
+    "ItineraryAI collects anonymous group preferences, detects conflicts, and uses AI to build a realistic itinerary with researched stays, transport, and destination ideas.",
   keywords: [
     "group travel planning",
     "AI trip planner",
     "itinerary generator",
     "group trip organizer",
     "travel AI",
+    "group trip planning app",
+    "anonymous trip survey",
   ],
   openGraph: {
-    title: "ItineraryAI — Group Trip Planning Made Effortless",
+    title: "ItineraryAI — Stop Letting Group Trips Die in the Group Chat",
     description:
-      "Let everyone share their travel preferences. AI handles the rest.",
+      "Collect honest group preferences, resolve budget and vibe clashes, and get a shareable AI itinerary.",
     type: "website",
   },
 };
