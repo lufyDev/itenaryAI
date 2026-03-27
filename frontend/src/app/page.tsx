@@ -188,7 +188,7 @@ export default function Home() {
   return (
     <main className="bg-stone-950">
       {/* ─── HERO ─── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-start pt-32 pb-16 sm:justify-center sm:pt-0 sm:pb-0 overflow-hidden">
+      <section className="relative min-h-[100dvh] flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-indigo-950/80 to-amber-950/50" />
 
         {STARS.map((star, i) => (
@@ -275,14 +275,14 @@ export default function Home() {
         </nav>
 
         {/* Hero Content */}
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
+        <div className="relative z-10 text-center px-6 pt-20 pb-28 max-w-5xl mx-auto sm:pt-16 sm:pb-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="mb-6"
+            className="mb-5 sm:mb-6"
           >
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] text-amber-300/90 text-sm font-medium">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.06] backdrop-blur-sm border border-white/[0.08] text-amber-300/90 text-xs sm:text-sm font-medium">
               <Sparkles className="w-3.5 h-3.5" />
               Built for trips that usually never happen
             </span>
@@ -292,7 +292,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.12 }}
-            className="text-4xl sm:text-5xl md:text-[3.35rem] lg:text-[4rem] font-bold text-white mb-5 leading-[1.03] tracking-tight"
+            className="text-[1.75rem] sm:text-5xl md:text-[3.35rem] lg:text-[4rem] font-bold text-white mb-4 sm:mb-5 leading-[1.08] sm:leading-[1.03] tracking-tight"
           >
             <span className="block">Where Group Trip Plans</span>
             <span className="block bg-gradient-to-r from-amber-300 via-orange-300 to-rose-300 bg-clip-text text-transparent">
@@ -304,7 +304,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.24 }}
-            className="text-base sm:text-lg md:text-xl text-slate-400 mb-9 max-w-2xl mx-auto leading-relaxed"
+            className="text-sm sm:text-lg md:text-xl text-slate-400 mb-7 sm:mb-9 max-w-2xl mx-auto leading-relaxed"
           >
             Different budgets, different vibes, different food choices, zero
             clarity on where to go. ItineraryAI collects honest preferences,
@@ -346,7 +346,7 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 z-[5]">
           <svg
             viewBox="0 0 1440 380"
-            className="w-full block"
+            className="w-full block h-28 sm:h-auto"
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
           >
