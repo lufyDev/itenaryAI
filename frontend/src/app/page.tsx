@@ -34,6 +34,10 @@ const STARS = Array.from({ length: 45 }, (_, i) => ({
   duration: Math.round((2.5 + seededRandom(i + 500) * 3) * 100) / 100,
 }));
 
+// Set to the id printed by `npm run seed:demo` in the backend repo.
+// When unset (e.g. local dev before seeding) the sample link just hides itself.
+const DEMO_TRIP_ID = process.env.NEXT_PUBLIC_DEMO_TRIP_ID;
+
 const STEPS = [
   {
     icon: <MapPin className="w-7 h-7" />,
@@ -340,6 +344,29 @@ export default function Home() {
               </div>
             )}
           </motion.div>
+
+          {/* No-signup path to the real output. The itinerary page is
+              public, so this costs nothing to serve and needs no agent run. */}
+          {DEMO_TRIP_ID && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.48 }}
+              className="flex justify-center mt-5 sm:mt-6"
+            >
+              <Link
+                href={`/trip/${DEMO_TRIP_ID}/itinerary`}
+                className="group inline-flex items-center gap-2 text-sm sm:text-base text-slate-400 hover:text-amber-300 transition-colors"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400/60" />
+                <span className="underline decoration-slate-700 underline-offset-4 group-hover:decoration-amber-400/50">
+                  See a sample itinerary
+                </span>
+                <span className="text-slate-600">&mdash; no signup</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </motion.div>
+          )}
         </div>
 
         {/* Mountains */}

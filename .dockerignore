@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.local
+.DS_Store
+README.md
+DEPLOY.md
+
+# The Next app deploys to Vercel, not into this image.
+frontend
