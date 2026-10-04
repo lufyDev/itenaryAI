@@ -3,8 +3,16 @@ const Trip = require("../models/Trip");
 const Member = require("../models/Member");
 const { aggregateTripData } = require("../services/aggregationService");
 const { authRequired } = require("../middleware/auth");
+const { rateLimit } = require("../middleware/rateLimit");
 
 const router = express.Router();
+
+// Itinerary generation is the only route that costs money per call
+// (OpenAI + Tavily), so it is the only one that gets a cap.
+const generateLimiter = rateLimit({
+  perUser: Number(process.env.GENERATE_LIMIT_PER_USER || 3),
+  global: Number(process.env.GENERATE_LIMIT_GLOBAL || 20),
+});
 
 router.get("/my-trips", authRequired, async (req, res) => {
   try {
@@ -101,7 +109,7 @@ router.post("/:tripId/aggregate", authRequired, async (req, res) => {
   }
 });
 
-router.post("/:tripId/generate-stream", authRequired, async (req, res) => {
+router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (req, res) => {
   try {
     const { tripId } = req.params;
     const trip = await Trip.findById(tripId);
