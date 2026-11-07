@@ -326,11 +326,9 @@ Make sure the AI microservice is also running on port 8000.
 
 ### Production Deployment
 
-The app is deployed on AWS EC2 (Ubuntu 24.04) with:
-- **Nginx** as reverse proxy (handles SSL, routing)
-- **PM2** for Node.js process management (backend + frontend)
-- **systemd** for the Python AI microservice
-- **Let's Encrypt** for free SSL via Certbot
+The frontend runs on Vercel, the API and AI microservice run as Docker containers on Railway, and the database is MongoDB Atlas. See [DEPLOY.md](./DEPLOY.md) for the full steps.
+
+Earlier versions ran on a single AWS EC2 instance with Nginx, PM2 and systemd, without containers. That instance was shut down when its free tier ended.
 
 
 
@@ -351,8 +349,8 @@ The app is deployed on AWS EC2 (Ubuntu 24.04) with:
 | Service | Technology | Port | Live URL |
 |---------|-----------|------|----------|
 | Frontend | Next.js 16 / React 19 | 3000 | [itineraryai.in](https://itineraryai.in) |
-| Backend API | Express.js 5 | 8080 | [itineraryai.in/api](https://itineraryai.in/api/) |
-| AI Microservice | FastAPI / Python | 8000 | Internal (same server) |
+| Backend API | Express.js 5 | 8080 | Railway public domain |
+| AI Microservice | FastAPI / Python | 8080 | Private (Railway internal network, no public URL) |
 
 ---
 

@@ -15,7 +15,7 @@ RUN npm install --omit=dev
 
 COPY . .
 
-# Cloud Run / Fly inject PORT. 8080 stays the local default.
+# Railway injects PORT. 8080 stays the local default.
 ENV PORT=8080
 EXPOSE 8080
 

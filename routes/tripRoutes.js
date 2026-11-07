@@ -2,6 +2,7 @@ const express = require("express");
 const Trip = require("../models/Trip");
 const Member = require("../models/Member");
 const { aggregateTripData } = require("../services/aggregationService");
+const { fetchWithWakeRetry } = require("../services/aiServiceClient");
 const { authRequired } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 
@@ -145,7 +146,7 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
       clearTimeout(timeout);
     });
 
-    const aiResponse = await fetch(
+    const aiResponse = await fetchWithWakeRetry(
       `${aiServiceUrl}/generate-itinerary-stream`,
       {
         method: "POST",

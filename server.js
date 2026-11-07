@@ -45,7 +45,7 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/trips", require("./routes/tripRoutes"));
 app.use("/api/survey", require("./routes/surveyRoutes"));
 
-// Cloud Run / Fly inject PORT. 8080 stays the local default.
+// Railway injects PORT. 8080 stays the local default.
 const PORT = process.env.PORT || 8080;
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
