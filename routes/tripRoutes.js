@@ -3,6 +3,7 @@ const Trip = require("../models/Trip");
 const Member = require("../models/Member");
 const { aggregateTripData } = require("../services/aggregationService");
 const { fetchWithWakeRetry } = require("../services/aiServiceClient");
+const { parseNewTrip } = require("../services/tripInput");
 const { authRequired } = require("../middleware/auth");
 const { rateLimit } = require("../middleware/rateLimit");
 
@@ -18,8 +19,10 @@ const generateLimiter = rateLimit({
 router.get("/my-trips", authRequired, async (req, res) => {
   try {
     const trips = await Trip.find({ organiser: req.user.userId })
-      .select("title source destination durationDays members itinerary createdAt")
-      .sort({ createdAt: -1 });
+      .select("title source destination durationDays members itinerary")
+      // Trips have no createdAt field, so sorting on it did nothing and new
+      // trips landed at the bottom. The ObjectId carries the creation time.
+      .sort({ _id: -1 });
 
     const tripsWithStatus = trips.map((t) => {
       const obj = t.toObject();
@@ -34,7 +37,7 @@ router.get("/my-trips", authRequired, async (req, res) => {
         durationDays: obj.durationDays,
         memberCount: obj.members?.length || 0,
         status,
-        createdAt: obj.createdAt,
+        createdAt: t._id.getTimestamp(),
       };
     });
 
@@ -46,15 +49,15 @@ router.get("/my-trips", authRequired, async (req, res) => {
 
 router.post("/create", authRequired, async (req, res) => {
   try {
-    const { title, source, destination, durationDays } = req.body;
+    const { trip: input, error } = parseNewTrip(req.body);
+    if (error) {
+      return res.status(400).json({ message: error });
+    }
 
     const trip = await Trip.create({
       organiser: req.user.userId,
       organiserName: req.user.name,
-      title,
-      source,
-      destination,
-      durationDays,
+      ...input,
     });
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
@@ -101,7 +104,7 @@ router.post("/:tripId/aggregate", authRequired, async (req, res) => {
     const updatedTrip = await Trip.findByIdAndUpdate(
       tripId,
       { aggregatedData },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     res.json(updatedTrip);
@@ -176,6 +179,7 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
     }
 
     let finalItinerary = null;
+    let lastState = null;
     let buffer = "";
 
     for await (const chunk of aiResponse.body) {
@@ -191,16 +195,13 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
         const payload = line.slice(5).trim();
 
         if (payload === "[DONE]") {
-          if (finalItinerary) {
-            trip.itinerary = finalItinerary;
-            await trip.save();
-          }
-          res.write("data: [DONE]\n\n");
-          return res.end();
+          await finishGeneration(trip, finalItinerary, lastState, res);
+          return;
         }
 
         try {
           const parsed = JSON.parse(payload);
+          if (parsed.state) lastState = parsed.state;
           if (
             (parsed.node === "planner" || parsed.node === "critic") &&
             parsed.state?.itinerary
@@ -222,6 +223,7 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
         if (payload !== "[DONE]") {
           try {
             const parsed = JSON.parse(payload);
+            if (parsed.state) lastState = parsed.state;
             if (
               (parsed.node === "planner" || parsed.node === "critic") &&
               parsed.state?.itinerary
@@ -236,12 +238,7 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
       }
     }
 
-    if (finalItinerary) {
-      trip.itinerary = finalItinerary;
-      await trip.save();
-    }
-    res.write("data: [DONE]\n\n");
-    res.end();
+    await finishGeneration(trip, finalItinerary, lastState, res);
   } catch (error) {
     console.error(error);
     if (!res.headersSent) {
@@ -257,5 +254,28 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
     res.end();
   }
 });
+
+/**
+ * Save the outcome of a generation and close the stream.
+ *
+ * The agent clears the itinerary when its critic rejects a draft, and gives up
+ * after three rejections. The last draft is still worth showing, but not as if
+ * it had passed review, so its unresolved issues are saved alongside it and
+ * the page shows them. If the agent produced nothing at all, the previous
+ * itinerary is kept and the user gets an error instead of a silent no-op.
+ */
+async function finishGeneration(trip, finalItinerary, lastState, res) {
+  if (finalItinerary) {
+    trip.itinerary = finalItinerary;
+    trip.itineraryIssues = lastState?.repair_instructions?.violations || [];
+    await trip.save();
+  } else {
+    res.write(
+      `data: ${JSON.stringify({ error: "We couldn't put together an itinerary this time. Please try again." })}\n\n`
+    );
+  }
+  res.write("data: [DONE]\n\n");
+  res.end();
+}
 
 module.exports = router;

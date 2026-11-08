@@ -65,8 +65,8 @@ services at 0.5 GB, which is too small for the agent.
 
 ### 3. Deploy the agent
 
-See `DEPLOY.md` in the `itenary_ai` repo. Note its private hostname, because
-that goes in `AI_SERVICE_URL` below.
+See `DEPLOY.md` in the `itenary_ai` repo. `AI_SERVICE_URL` below refers to it by
+service name, so name the service `itineraryai-agent`.
 
 ### 4. Deploy this API
 
@@ -80,12 +80,13 @@ MONGO_URI=<same value as local .env>
 JWT_SECRET=<a long random string>
 GOOGLE_CLIENT_ID=<google oauth client id>
 FRONTEND_URL=https://itineraryai.in
-AI_SERVICE_URL=http://<agent-hostname>.railway.internal:8080
+AI_SERVICE_URL=http://${{itineraryai-agent.RAILWAY_PRIVATE_DOMAIN}}:8080
 ALLOWED_ORIGINS=https://itineraryai.in,https://www.itineraryai.in
 ```
 
 `AI_SERVICE_URL` must be `http`, not `https`. Railway's private network is
-already encrypted.
+already encrypted. The `${{...}}` part is a Railway reference: it fills in the
+agent's real private address, which doesn't always match its service name.
 
 Settings:
 

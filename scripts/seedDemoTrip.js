@@ -100,7 +100,7 @@ async function main() {
   const user = await User.findOneAndUpdate(
     { googleId: DEMO_USER.googleId },
     { $set: DEMO_USER },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
   );
   console.log(`Demo user: ${user._id}`);
 
@@ -118,7 +118,7 @@ async function main() {
         itinerary: ITINERARY,
       },
     },
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { returnDocument: "after", upsert: true, setDefaultsOnInsert: true }
   );
 
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";

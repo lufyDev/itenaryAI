@@ -9,6 +9,7 @@ import {
   IndianRupee,
   MapPin,
   Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Itinerary, ItineraryDay } from "@/lib/api";
@@ -97,11 +98,32 @@ function DayCard({ day, index }: { day: ItineraryDay; index: number }) {
 
 export default function ItineraryView({
   itinerary,
+  issues = [],
 }: {
   itinerary: Itinerary;
+  issues?: string[];
 }) {
   return (
     <div className="space-y-5">
+      {issues.length > 0 && (
+        <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/30">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            <p className="text-amber-300 text-sm font-semibold">
+              Double-check this plan
+            </p>
+          </div>
+          <p className="text-slate-400 text-sm mb-2">
+            Our AI reviewer still had concerns after several revisions:
+          </p>
+          <ul className="list-disc pl-5 space-y-1 text-slate-300 text-sm">
+            {issues.map((issue, i) => (
+              <li key={i}>{issue}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Summary Card */}
       <motion.div
         initial={{ opacity: 0, y: 15 }}

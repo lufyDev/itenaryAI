@@ -38,6 +38,12 @@ const tripSchema = new mongoose.Schema({
   itinerary: {
     type: Object,
   },
+  // Problems the agent's critic still saw in the saved itinerary when it gave
+  // up revising. Empty when the itinerary passed review.
+  itineraryIssues: {
+    type: [String],
+    default: [],
+  },
 });
 
 module.exports = mongoose.model("Trip", tripSchema);

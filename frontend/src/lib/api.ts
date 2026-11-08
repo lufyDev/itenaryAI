@@ -27,6 +27,9 @@ export interface Trip {
   members: string[];
   aggregatedData?: object;
   itinerary?: Itinerary;
+  // Problems the AI reviewer still saw when it stopped revising. Empty or
+  // missing when the itinerary passed review.
+  itineraryIssues?: string[];
   surveyLink?: string;
 }
 
@@ -100,7 +103,6 @@ export async function getMyTrips(token: string): Promise<TripSummary[]> {
 
 export async function createTrip(
   data: {
-    title: string;
     source: string;
     destination: string;
     durationDays: number;
@@ -159,8 +161,8 @@ export async function aggregateTrip(
 export interface StreamEvent {
   node: string;
   state: {
-    itinerary?: Itinerary;
-    repair_instructions?: string;
+    itinerary?: Itinerary | null;
+    repair_instructions?: { violations?: string[] } | null;
     tool_results?: unknown;
     attempt_count?: number;
   };

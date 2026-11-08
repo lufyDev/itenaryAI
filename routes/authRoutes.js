@@ -25,7 +25,7 @@ router.post("/google", async (req, res) => {
     const user = await User.findOneAndUpdate(
       { googleId },
       { email, name, picture },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     const token = jwt.sign(

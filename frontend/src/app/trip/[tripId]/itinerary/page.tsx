@@ -112,7 +112,10 @@ export default function SharedItineraryPage() {
           </p>
         </motion.div>
 
-        <ItineraryView itinerary={trip.itinerary} />
+        <ItineraryView
+          itinerary={trip.itinerary}
+          issues={trip.itineraryIssues}
+        />
       </div>
 
       <footer className="border-t border-stone-800/40 py-8 px-6 mt-10">

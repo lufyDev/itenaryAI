@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import {
   LogOut,
   LayoutDashboard,
   ShieldAlert,
+  ExternalLink,
 } from "lucide-react";
 import {
   getTrip,
@@ -35,27 +36,41 @@ interface ProgressStep {
   label: string;
 }
 
-function completedLabelForNode(node: string, hasItinerary: boolean): string {
-  switch (node) {
+// How often the dashboard checks for new survey responses while waiting.
+const RESPONSE_POLL_MS = 5000;
+
+// The critic clears the itinerary when it rejects a draft and sends the
+// planner back with repair instructions, so that pair means "needs revising".
+function isRejection(event: StreamEvent): boolean {
+  return !event.state?.itinerary && !!event.state?.repair_instructions;
+}
+
+function completedLabelForNode(event: StreamEvent, draftNumber: number): string {
+  const hasItinerary = !!event.state?.itinerary;
+  switch (event.node) {
     case "tool":
-      return "Retrieved travel knowledge";
+      return "Researched the destination, stays and transport";
     case "planner":
-      return hasItinerary ? "Generated itinerary" : "Analyzed requirements";
+      if (!hasItinerary) return "Analyzed your group's preferences";
+      return draftNumber > 1 ? "Revised the itinerary" : "Drafted the itinerary";
     case "critic":
-      return "Reviewed itinerary";
+      return isRejection(event)
+        ? "Review found something to fix"
+        : "Review passed";
     default:
-      return `Processed ${node}`;
+      return `Processed ${event.node}`;
   }
 }
 
-function nextActivityForNode(node: string, hasItinerary: boolean): string {
-  switch (node) {
+function nextActivityForNode(event: StreamEvent): string {
+  const hasItinerary = !!event.state?.itinerary;
+  switch (event.node) {
     case "planner":
-      return hasItinerary ? "Reviewing itinerary..." : "Retrieving travel knowledge...";
+      return hasItinerary ? "Reviewing the itinerary..." : "Researching the destination...";
     case "tool":
-      return "Generating itinerary...";
+      return "Drafting the itinerary...";
     case "critic":
-      return "Finalizing...";
+      return isRejection(event) ? "Revising the itinerary..." : "Saving...";
     default:
       return "Processing...";
   }
@@ -75,6 +90,7 @@ export default function TripDashboard() {
   const [copiedSurvey, setCopiedSurvey] = useState(false);
   const [copiedItinerary, setCopiedItinerary] = useState(false);
   const [surveyLink, setSurveyLink] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
 
   const isOwner = !authLoading && user && trip?.organiser === user._id;
 
@@ -88,6 +104,34 @@ export default function TripDashboard() {
     );
   }, [tripId]);
 
+  // Re-fetch the trip to pick up new survey responses. The manual button shows
+  // a spinner; the automatic poll stays quiet so the page doesn't flicker.
+  const refreshTrip = useCallback(
+    async (showSpinner: boolean) => {
+      if (showSpinner) setRefreshing(true);
+      try {
+        setTrip(await getTrip(tripId));
+      } catch {
+        // Keep showing what we have; the next poll will try again.
+      } finally {
+        if (showSpinner) setRefreshing(false);
+      }
+    },
+    [tripId]
+  );
+
+  const waitingForResponses =
+    !!isOwner && !!trip && !trip.itinerary && !generating;
+
+  useEffect(() => {
+    if (!waitingForResponses) return;
+    const id = setInterval(() => {
+      // Skip background tabs: nobody is looking, and it saves requests.
+      if (document.visibilityState === "visible") refreshTrip(false);
+    }, RESPONSE_POLL_MS);
+    return () => clearInterval(id);
+  }, [waitingForResponses, refreshTrip]);
+
   const handleGenerate = async () => {
     if (!token) return;
     setGenerating(true);
@@ -96,31 +140,40 @@ export default function TripDashboard() {
     setError("");
 
     let latestItinerary: Itinerary | null = null;
+    let draftNumber = 0;
 
     try {
       await aggregateTrip(tripId, token);
-      setDoneSteps([{ label: "Aggregated preferences" }]);
-      setActiveLabel("Analyzing requirements...");
+      setDoneSteps([{ label: "Combined everyone's preferences" }]);
+      setActiveLabel("Analyzing your group's preferences...");
 
       await generateTripItineraryStream(
         tripId,
         token,
         (event: StreamEvent) => {
-          const hasItinerary = !!event.state?.itinerary;
-          if (hasItinerary) latestItinerary = event.state.itinerary!;
+          if (event.state?.itinerary) {
+            latestItinerary = event.state.itinerary;
+            if (event.node === "planner") draftNumber += 1;
+          }
 
-          const done = completedLabelForNode(event.node, hasItinerary);
-          const next = nextActivityForNode(event.node, hasItinerary);
+          const done = completedLabelForNode(event, draftNumber);
+          const next = nextActivityForNode(event);
 
           setDoneSteps((prev) => [...prev, { label: done }]);
           setActiveLabel(next);
         },
-        () => {
+        async () => {
           setActiveLabel("");
-          if (latestItinerary) {
-            setTrip((prev) =>
-              prev ? { ...prev, itinerary: latestItinerary! } : prev
-            );
+          // Reload the saved trip rather than trusting the last streamed
+          // draft: the server decides what was saved, and whether the
+          // reviewer still had concerns about it.
+          try {
+            setTrip(await getTrip(tripId));
+          } catch {
+            const fallback = latestItinerary;
+            if (fallback) {
+              setTrip((prev) => (prev ? { ...prev, itinerary: fallback } : prev));
+            }
           }
           setGenerating(false);
         },
@@ -295,12 +348,13 @@ export default function TripDashboard() {
             Share this with your group to collect their travel preferences.
           </p>
           <div className="flex items-center gap-2">
-            <div className="flex-1 px-3 py-2.5 rounded-lg bg-stone-800 text-slate-400 text-sm font-mono truncate border border-stone-700">
+            <div className="flex-1 min-w-0 px-3 py-2.5 rounded-lg bg-stone-800 text-slate-400 text-sm font-mono truncate border border-stone-700">
               {surveyLink || `Loading...`}
             </div>
             <button
               onClick={copySurveyLink}
               disabled={!surveyLink}
+              title="Copy survey link"
               className="p-2.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-slate-300 transition-colors border border-stone-700 cursor-pointer disabled:opacity-50"
             >
               {copiedSurvey ? (
@@ -309,6 +363,16 @@ export default function TripDashboard() {
                 <Copy className="w-4 h-4" />
               )}
             </button>
+            <a
+              href={surveyLink || undefined}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open the survey in a new tab to fill it yourself"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-slate-300 text-sm transition-colors border border-stone-700 shrink-0"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">Fill it yourself</span>
+            </a>
           </div>
         </motion.div>
 
@@ -321,7 +385,10 @@ export default function TripDashboard() {
             animate={{ opacity: 1 }}
             className="space-y-6"
           >
-            <ItineraryView itinerary={trip.itinerary} />
+            <ItineraryView
+              itinerary={trip.itinerary}
+              issues={trip.itineraryIssues}
+            />
 
             {error && (
               <p className="text-red-400 text-sm text-center">{error}</p>
@@ -370,9 +437,10 @@ export default function TripDashboard() {
                   Share the survey link above and wait for your group to fill in
                   their preferences.
                 </p>
-                <p className="text-slate-600 text-xs mt-3">
-                  Refresh the page to check for new responses.
-                </p>
+                <AutoRefreshNote
+                  refreshing={refreshing}
+                  onRefresh={() => refreshTrip(true)}
+                />
               </>
             ) : (
               <>
@@ -406,11 +474,41 @@ export default function TripDashboard() {
                   <Sparkles className="w-5 h-5" />
                   Generate Itinerary
                 </button>
+                <p className="text-slate-600 text-xs mt-4">
+                  Takes about a minute. Still expecting responses? Wait for them
+                  first; they show up here on their own.
+                </p>
+                <AutoRefreshNote
+                  refreshing={refreshing}
+                  onRefresh={() => refreshTrip(true)}
+                />
               </>
             )}
           </motion.div>
         )}
       </div>
+    </div>
+  );
+}
+
+function AutoRefreshNote({
+  refreshing,
+  onRefresh,
+}: {
+  refreshing: boolean;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-3 mt-4 text-xs text-slate-600">
+      <span>Checking for new responses every few seconds</span>
+      <button
+        onClick={onRefresh}
+        disabled={refreshing}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800 border border-stone-700 text-slate-300 hover:bg-stone-700 transition-colors cursor-pointer disabled:opacity-60"
+      >
+        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+        Refresh
+      </button>
     </div>
   );
 }
