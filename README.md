@@ -2,6 +2,14 @@
 
 **Live at: [https://itineraryai.in](https://itineraryai.in)**
 
+<p align="center">
+  <a href="https://www.itineraryai.in/#demo">
+    <img src="docs/demo.gif" alt="ItineraryAI demo: create a Delhi to Manali trip, the group fills the survey, the AI agent plans an overnight bus out, three days in Manali and back by morning" width="880">
+  </a>
+  <br>
+  <sub>Real recording, sped up. <a href="https://www.itineraryai.in/#demo">Watch the 45-second version</a> or <a href="https://www.itineraryai.in">try it yourself</a>.</sub>
+</p>
+
 > Planning a group trip is a nightmare. Everyone has different budget, different food taste, different vibe. Someone wants to chill, someone wants adventure. Nobody agrees on anything. Trip gets cancelled before it even starts.
 >
 > ItineraryAI fixes this. Quietly.

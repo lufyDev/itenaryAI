@@ -360,7 +360,7 @@ export default function Home() {
             >
               <PlayCircle className="w-4 h-4 text-amber-400/60" />
               <span className="underline decoration-slate-700 underline-offset-4 group-hover:decoration-amber-400/50">
-                Watch the 50-second demo
+                Watch the 45-second demo
               </span>
             </a>
             {DEMO_TRIP_ID && (
@@ -443,7 +443,7 @@ export default function Home() {
             </video>
           </div>
           <p className="text-center text-slate-600 text-sm mt-4">
-            Real recording, sped up where the AI is working. No sound.
+            Real recording on the live site, sped up. No sound.
           </p>
         </motion.div>
       </section>
