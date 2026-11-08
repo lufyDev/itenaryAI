@@ -14,6 +14,7 @@ import {
   Zap,
   LogOut,
   LayoutDashboard,
+  PlayCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { GoogleLogin } from "@react-oauth/google";
@@ -345,15 +346,24 @@ export default function Home() {
             )}
           </motion.div>
 
-          {/* No-signup path to the real output. The itinerary page is
-              public, so this costs nothing to serve and needs no agent run. */}
-          {DEMO_TRIP_ID && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.48 }}
-              className="flex justify-center mt-5 sm:mt-6"
+          {/* No-signup paths to the real product: the demo video below, and
+              the public itinerary page, which needs no agent run. */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.7, delay: 0.48 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 mt-5 sm:mt-6"
+          >
+            <a
+              href="#demo"
+              className="group inline-flex items-center gap-2 text-sm sm:text-base text-slate-400 hover:text-amber-300 transition-colors"
             >
+              <PlayCircle className="w-4 h-4 text-amber-400/60" />
+              <span className="underline decoration-slate-700 underline-offset-4 group-hover:decoration-amber-400/50">
+                Watch the 50-second demo
+              </span>
+            </a>
+            {DEMO_TRIP_ID && (
               <Link
                 href={`/trip/${DEMO_TRIP_ID}/itinerary`}
                 className="group inline-flex items-center gap-2 text-sm sm:text-base text-slate-400 hover:text-amber-300 transition-colors"
@@ -365,8 +375,8 @@ export default function Home() {
                 <span className="text-slate-600">&mdash; no signup</span>
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
               </Link>
-            </motion.div>
-          )}
+            )}
+          </motion.div>
         </div>
 
         {/* Mountains */}
@@ -393,6 +403,49 @@ export default function Home() {
             />
           </svg>
         </div>
+      </section>
+
+      {/* ─── DEMO ─── */}
+      <section id="demo" className="bg-[#1c1917] px-6 pt-20 pb-8 scroll-mt-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6 }}
+          className="max-w-5xl mx-auto"
+        >
+          <div className="text-center mb-10">
+            <p className="text-amber-400/80 text-sm font-semibold tracking-widest uppercase mb-3">
+              See It In Action
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              From Group Chat to a Real Plan in Under a Minute
+            </h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+              Create a trip, share one link, let the AI agent research and plan.
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-stone-700/50 shadow-2xl shadow-black/40 bg-stone-950">
+            {/* preload="none": the poster shows the finished itinerary, and the
+                1.4 MB video only downloads when someone presses play. */}
+            <video
+              className="w-full h-auto block"
+              controls
+              playsInline
+              muted
+              preload="none"
+              poster="/demo/itineraryai-demo-poster.jpg"
+              width={1280}
+              height={800}
+              aria-label="ItineraryAI product demo: creating a trip, filling the group survey and generating an itinerary"
+            >
+              <source src="/demo/itineraryai-demo.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <p className="text-center text-slate-600 text-sm mt-4">
+            Real recording, sped up where the AI is working. No sound.
+          </p>
+        </motion.div>
       </section>
 
       {/* ─── HOW IT WORKS ─── */}
