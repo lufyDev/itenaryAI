@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   ShieldAlert,
   ExternalLink,
+  Clock,
 } from "lucide-react";
 import {
   getTrip,
@@ -31,6 +32,17 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ItineraryView from "@/components/ItineraryView";
+import { timePreferenceLabel } from "@/lib/schedule";
+
+/** "Leave Delhi in the evening · back in the morning", or null if no preference. */
+function travelTimesText(trip: Trip): string | null {
+  const leave = timePreferenceLabel(trip.departurePreference);
+  const back = timePreferenceLabel(trip.returnPreference);
+  const parts = [];
+  if (leave) parts.push(`Leave ${trip.source} in the ${leave}`);
+  if (back) parts.push(`${parts.length ? "back" : `Back in ${trip.source}`} in the ${back}`);
+  return parts.length ? parts.join(" · ") : null;
+}
 
 interface ProgressStep {
   label: string;
@@ -328,6 +340,12 @@ export default function TripDashboard() {
             {trip?.durationDays} days &middot; Organized by{" "}
             <span className="text-slate-300">{trip?.organiserName}</span>
           </p>
+          {trip && travelTimesText(trip) && (
+            <p className="flex items-center gap-2 text-slate-500 text-sm mt-1">
+              <Clock className="w-4 h-4 text-amber-400/60" />
+              {travelTimesText(trip)}
+            </p>
+          )}
         </motion.div>
 
         {/* Survey Link Card */}

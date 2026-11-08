@@ -4,8 +4,60 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Copy, Check, ExternalLink, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
-import { createTrip } from "@/lib/api";
+import { createTrip, type TimePreference } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { TIME_PREFERENCE_OPTIONS } from "@/lib/schedule";
+
+function TimeChoice({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: TimePreference;
+  onChange: (value: TimePreference) => void;
+}) {
+  return (
+    <fieldset>
+      <legend className="block text-sm font-medium text-slate-300 mb-2">
+        {label}
+      </legend>
+      <div className="grid grid-cols-4 gap-1.5 p-1 rounded-xl bg-stone-800 border border-stone-700">
+        {TIME_PREFERENCE_OPTIONS.map((option) => {
+          const selected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={selected}
+              title={option.hint || undefined}
+              onClick={() => onChange(option.value)}
+              className={`py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer ${
+                selected
+                  ? "bg-amber-500 text-stone-950"
+                  : "text-slate-400 hover:text-white hover:bg-stone-700"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+function travelHint(leave: TimePreference, back: TimePreference): string {
+  if (leave === "evening" && back === "morning") {
+    return "Overnight both ways: you'll travel while you sleep and get full days there.";
+  }
+  if (leave === "evening") return "Good for an overnight bus or train out.";
+  if (back === "morning") return "Good for an overnight bus or train home.";
+  if (leave === "any" && back === "any") {
+    return "Optional. Leave it on Any time and the plan picks what fits the route.";
+  }
+  return "";
+}
 
 export default function CreateTripModal({
   onClose,
@@ -17,6 +69,8 @@ export default function CreateTripModal({
     source: "",
     destination: "",
     durationDays: 3,
+    departurePreference: "any" as TimePreference,
+    returnPreference: "any" as TimePreference,
   });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -71,7 +125,7 @@ export default function CreateTripModal({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: "spring", duration: 0.5 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-stone-900 border border-stone-700/50 rounded-2xl shadow-2xl overflow-hidden"
+          className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto bg-stone-900 border border-stone-700/50 rounded-2xl shadow-2xl"
         >
           <div className="flex items-center justify-between px-6 pt-6">
             <h2 className="text-xl font-bold text-white">
@@ -140,6 +194,28 @@ export default function CreateTripModal({
                     }
                     className="w-full px-4 py-3 rounded-xl bg-stone-800 border border-stone-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all"
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <TimeChoice
+                    label={`Leave ${form.source.trim() || "home"}`}
+                    value={form.departurePreference}
+                    onChange={(departurePreference) =>
+                      setForm({ ...form, departurePreference })
+                    }
+                  />
+                  <TimeChoice
+                    label={`Back in ${form.source.trim() || "home"}`}
+                    value={form.returnPreference}
+                    onChange={(returnPreference) =>
+                      setForm({ ...form, returnPreference })
+                    }
+                  />
+                  {travelHint(form.departurePreference, form.returnPreference) && (
+                    <p className="text-slate-500 text-xs">
+                      {travelHint(form.departurePreference, form.returnPreference)}
+                    </p>
+                  )}
                 </div>
 
                 {form.source.trim() && form.destination.trim() && (

@@ -26,6 +26,18 @@ const tripSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // When the group wants to leave the source city, and to be back there at
+  // the end. Lets the agent plan e.g. an overnight bus both ways.
+  departurePreference: {
+    type: String,
+    enum: ["morning", "afternoon", "evening", "any"],
+    default: "any",
+  },
+  returnPreference: {
+    type: String,
+    enum: ["morning", "afternoon", "evening", "any"],
+    default: "any",
+  },
   members: [
     {
       type: mongoose.Schema.Types.ObjectId,

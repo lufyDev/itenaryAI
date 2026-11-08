@@ -1,13 +1,28 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+export type ScheduleKind = "travel" | "activity" | "meal" | "rest";
+
+export interface ScheduleEntry {
+  // 24-hour "HH:MM". An end earlier than the start means it runs past midnight.
+  start: string;
+  end: string;
+  kind: ScheduleKind;
+  activity: string;
+}
+
 export interface ItineraryDay {
   day: number;
-  morning: string;
-  afternoon: string;
-  evening: string;
+  // Timed entries. Itineraries generated before this existed have the three
+  // free-text slots below instead.
+  schedule?: ScheduleEntry[];
+  morning?: string;
+  afternoon?: string;
+  evening?: string;
   stay: string;
   estimatedCostPerPerson: number;
 }
+
+export type TimePreference = "morning" | "afternoon" | "evening" | "any";
 
 export interface Itinerary {
   summary: string;
@@ -24,6 +39,8 @@ export interface Trip {
   source: string;
   destination: string;
   durationDays: number;
+  departurePreference?: TimePreference;
+  returnPreference?: TimePreference;
   members: string[];
   aggregatedData?: object;
   itinerary?: Itinerary;
@@ -106,6 +123,8 @@ export async function createTrip(
     source: string;
     destination: string;
     durationDays: number;
+    departurePreference: TimePreference;
+    returnPreference: TimePreference;
   },
   token: string
 ): Promise<Trip & { surveyLink: string }> {

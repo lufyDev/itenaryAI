@@ -10,39 +10,108 @@ import {
   MapPin,
   Wallet,
   AlertTriangle,
+  Bus,
+  Compass,
+  UtensilsCrossed,
+  BedDouble,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import type { Itinerary, ItineraryDay } from "@/lib/api";
+import type { Itinerary, ItineraryDay, ScheduleEntry, ScheduleKind } from "@/lib/api";
+import { entrySpan, formatClock, formatDuration } from "@/lib/schedule";
+
+const KIND_ICONS: Record<ScheduleKind, React.ReactNode> = {
+  travel: <Bus className="w-4 h-4" />,
+  activity: <Compass className="w-4 h-4" />,
+  meal: <UtensilsCrossed className="w-4 h-4" />,
+  rest: <BedDouble className="w-4 h-4" />,
+};
 
 function formatCost(amount: number | undefined) {
   if (amount == null) return "—";
   return amount.toLocaleString("en-IN");
 }
 
-function TimeSlot({
+function TimelineRow({
   icon,
-  label,
+  heading,
   text,
+  highlight = false,
 }: {
   icon: React.ReactNode;
-  label: string;
+  heading: React.ReactNode;
   text: string;
+  highlight?: boolean;
 }) {
   return (
     <div className="flex gap-3">
       <div className="flex flex-col items-center">
-        <div className="w-8 h-8 rounded-lg bg-stone-800 flex items-center justify-center text-amber-400 shrink-0">
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+            highlight ? "bg-sky-500/15 text-sky-300" : "bg-stone-800 text-amber-400"
+          }`}
+        >
           {icon}
         </div>
         <div className="w-px flex-1 bg-stone-800 mt-1" />
       </div>
-      <div className="pb-5">
-        <p className="text-xs font-semibold text-amber-400/70 uppercase tracking-wider mb-1">
-          {label}
+      <div className="pb-5 min-w-0">
+        <p className="text-xs font-semibold text-amber-400/80 tracking-wide mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          {heading}
         </p>
         <p className="text-slate-300 text-sm leading-relaxed">{text}</p>
       </div>
     </div>
+  );
+}
+
+function ScheduleRow({ entry }: { entry: ScheduleEntry }) {
+  const span = entrySpan(entry.start, entry.end);
+  return (
+    <TimelineRow
+      icon={KIND_ICONS[entry.kind] ?? <Compass className="w-4 h-4" />}
+      highlight={span?.overnight}
+      heading={
+        <>
+          <span>
+            {formatClock(entry.start)} – {formatClock(entry.end)}
+          </span>
+          {span?.overnight && (
+            <span className="px-1.5 py-0.5 rounded-md bg-sky-500/10 text-sky-300 text-[11px] font-medium">
+              <Moon className="w-3 h-3 inline -mt-0.5 mr-1" />
+              arrives next day
+            </span>
+          )}
+          {span && span.minutes > 0 && (
+            <span className="text-slate-500 font-normal">
+              {formatDuration(span.minutes)}
+            </span>
+          )}
+        </>
+      }
+      text={entry.activity}
+    />
+  );
+}
+
+function LegacySlots({ day }: { day: ItineraryDay }) {
+  const slots = [
+    { label: "Morning", icon: <Sunrise className="w-4 h-4" />, text: day.morning },
+    { label: "Afternoon", icon: <Sun className="w-4 h-4" />, text: day.afternoon },
+    { label: "Evening", icon: <Moon className="w-4 h-4" />, text: day.evening },
+  ];
+  return (
+    <>
+      {slots
+        .filter((slot) => slot.text)
+        .map((slot) => (
+          <TimelineRow
+            key={slot.label}
+            icon={slot.icon}
+            heading={<span className="uppercase tracking-wider">{slot.label}</span>}
+            text={slot.text as string}
+          />
+        ))}
+    </>
   );
 }
 
@@ -71,21 +140,11 @@ function DayCard({ day, index }: { day: ItineraryDay; index: number }) {
       </div>
 
       <div className="px-6 pt-5">
-        <TimeSlot
-          icon={<Sunrise className="w-4 h-4" />}
-          label="Morning"
-          text={day.morning}
-        />
-        <TimeSlot
-          icon={<Sun className="w-4 h-4" />}
-          label="Afternoon"
-          text={day.afternoon}
-        />
-        <TimeSlot
-          icon={<Moon className="w-4 h-4" />}
-          label="Evening"
-          text={day.evening}
-        />
+        {day.schedule?.length ? (
+          day.schedule.map((entry, i) => <ScheduleRow key={i} entry={entry} />)
+        ) : (
+          <LegacySlots day={day} />
+        )}
       </div>
 
       <div className="mx-6 mb-5 flex items-center gap-2.5 px-4 py-3 rounded-xl bg-stone-800/60 text-slate-300">

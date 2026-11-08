@@ -7,6 +7,7 @@
 
 const MAX_PLACE_LENGTH = 60;
 const MAX_DURATION_DAYS = 30;
+const TIME_PREFERENCES = ["morning", "afternoon", "evening", "any"];
 
 function deriveTripTitle(source, destination) {
   return `${source} to ${destination}`;
@@ -34,14 +35,22 @@ function parseNewTrip(body = {}) {
     return { error: `Duration must be a whole number of days between 1 and ${MAX_DURATION_DAYS}.` };
   }
 
+  const departurePreference = body.departurePreference ?? "any";
+  const returnPreference = body.returnPreference ?? "any";
+  if (!TIME_PREFERENCES.includes(departurePreference) || !TIME_PREFERENCES.includes(returnPreference)) {
+    return { error: "Travel times must be morning, afternoon, evening or any time." };
+  }
+
   return {
     trip: {
       title: deriveTripTitle(source, destination),
       source,
       destination,
       durationDays,
+      departurePreference,
+      returnPreference,
     },
   };
 }
 
-module.exports = { deriveTripTitle, parseNewTrip, MAX_DURATION_DAYS };
+module.exports = { deriveTripTitle, parseNewTrip, MAX_DURATION_DAYS, TIME_PREFERENCES };

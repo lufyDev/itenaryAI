@@ -5,7 +5,14 @@ const { parseNewTrip, deriveTripTitle } = require("../services/tripInput");
 test("derives the title from the route", () => {
   assert.equal(deriveTripTitle("Delhi", "Manali"), "Delhi to Manali");
   const { trip } = parseNewTrip({ source: " Delhi ", destination: "Manali ", durationDays: 3 });
-  assert.deepEqual(trip, { title: "Delhi to Manali", source: "Delhi", destination: "Manali", durationDays: 3 });
+  assert.deepEqual(trip, {
+    title: "Delhi to Manali",
+    source: "Delhi",
+    destination: "Manali",
+    durationDays: 3,
+    departurePreference: "any",
+    returnPreference: "any",
+  });
 });
 
 test("ignores a title sent by an older client", () => {
@@ -17,6 +24,18 @@ test("accepts a duration sent as a string", () => {
   assert.equal(parseNewTrip({ source: "A", destination: "B", durationDays: "4" }).trip.durationDays, 4);
 });
 
+test("keeps the preferred travel times", () => {
+  const { trip } = parseNewTrip({
+    source: "Delhi",
+    destination: "Manali",
+    durationDays: 3,
+    departurePreference: "evening",
+    returnPreference: "morning",
+  });
+  assert.equal(trip.departurePreference, "evening");
+  assert.equal(trip.returnPreference, "morning");
+});
+
 test("rejects bad input with a readable message", () => {
   const cases = [
     {},
@@ -26,6 +45,8 @@ test("rejects bad input with a readable message", () => {
     { source: "Delhi", destination: "Bir", durationDays: 31 },
     { source: "Delhi", destination: "Bir", durationDays: 2.5 },
     { source: "x".repeat(61), destination: "Bir", durationDays: 3 },
+    { source: "Delhi", destination: "Bir", durationDays: 3, departurePreference: "midnight" },
+    { source: "Delhi", destination: "Bir", durationDays: 3, returnPreference: 9 },
   ];
   for (const body of cases) {
     const { trip, error } = parseNewTrip(body);

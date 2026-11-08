@@ -47,45 +47,123 @@ const AGGREGATED_DATA = {
 
 const ITINERARY = {
   summary:
-    "Three days in Jibhi built around a balanced pace — one real trek, one slow day, and a camping night. Overnight bus both ways keeps the cost inside the lowest member's budget without cutting anyone's must-do activity.",
+    "Leave Delhi on a Friday-night Volvo, get two full days in Jibhi, and be back at ISBT on Monday morning. One easy day, one real trek, and an overnight bus both ways keeps the cost well inside everyone's budget without cutting anyone's must-do activity.",
   days: [
     {
       day: 1,
-      morning:
-        "Arrive in Aut after the overnight Volvo from Delhi (ISBT Kashmere Gate, ~10 hrs). Shared cab from Aut to Jibhi via Banjar, roughly 2 hrs on a hill road — keep motion sickness tablets handy.",
-      afternoon:
-        "Check in, then an easy walk to Jibhi Waterfall — 10 minutes off the main road through a deodar patch. Late lunch of local trout and rajma-chawal at a riverside dhaba.",
-      evening:
-        "Settle in at a cafe over the Jibhi stream. Early night on purpose — Day 2 is the long one.",
-      stay: "Riverside budget guesthouse, Jibhi — twin rooms, balcony over the stream",
-      estimatedCostPerPerson: 2600,
+      schedule: [
+        {
+          start: "19:00",
+          end: "19:45",
+          kind: "travel",
+          activity: "Metro to ISBT Kashmere Gate (Yellow Line). Eat before you board; the bus stops once, around midnight.",
+        },
+        {
+          start: "20:30",
+          end: "06:30",
+          kind: "travel",
+          activity: "Overnight HRTC Volvo from Delhi to Aut, about 10 hours, ₹1,250. Window seats on the left get the river view at sunrise.",
+        },
+      ],
+      stay: "Overnight Volvo (Delhi to Aut)",
+      estimatedCostPerPerson: 1300,
     },
     {
       day: 2,
-      morning:
-        "Early start for the Jalori Pass drive (~1 hr), then the Serolsar Lake trek — 5 km each way, gentle gradient through old oak forest. Carry water; there is one dhaba at the pass and nothing after it.",
-      afternoon:
-        "Packed lunch at Serolsar Lake, trek back down. Short stop at Raghupur Fort ridge if legs allow — 30 minutes up, and the Dhauladhar view is the one everyone photographs.",
-      evening:
-        "Drive to the Shoja campsite. Bonfire and dinner under the stars. Smoking area is away from the tents; no alcohol on site, which keeps the group's non-negotiable intact.",
-      stay: "Shoja camping site — insulated tents with sleeping bags, shared washrooms",
-      estimatedCostPerPerson: 3100,
+      schedule: [
+        {
+          start: "06:30",
+          end: "08:30",
+          kind: "travel",
+          activity: "Shared cab from Aut to Jibhi via Banjar, about 2 hours on a hill road, ₹300 a seat. Keep motion sickness tablets handy.",
+        },
+        {
+          start: "08:30",
+          end: "10:00",
+          kind: "rest",
+          activity: "Check in at the riverside guesthouse, breakfast, and a short nap after the bus.",
+        },
+        {
+          start: "10:30",
+          end: "12:30",
+          kind: "activity",
+          activity: "Easy walk to Jibhi Waterfall, 10 minutes off the main road through a deodar patch, then along the stream.",
+        },
+        {
+          start: "13:00",
+          end: "14:00",
+          kind: "meal",
+          activity: "Late lunch of local trout and rajma-chawal at a riverside dhaba.",
+        },
+        {
+          start: "15:00",
+          end: "17:30",
+          kind: "activity",
+          activity: "Walk to Chaini Kothi, the old timber-bonded tower, for a feel of Kullu's pre-concrete architecture.",
+        },
+        {
+          start: "19:30",
+          end: "21:00",
+          kind: "meal",
+          activity: "Dinner at a cafe over the Jibhi stream. Early night on purpose: tomorrow starts at 7.",
+        },
+      ],
+      stay: "Riverside budget guesthouse, Jibhi (twin rooms, balcony over the stream)",
+      estimatedCostPerPerson: 2400,
     },
     {
       day: 3,
-      morning:
-        "Slow morning — this is the relaxed day. Breakfast at the campsite, then the walk down to Chaini Kothi, the old timber-bonded tower, for a feel of Kullu's pre-concrete architecture.",
-      afternoon:
-        "Last run through the Banjar local market for kullu shawls, rajma and wild apricot jam. Final cafe stop for coffee and apple pie before the drive out.",
-      evening:
-        "Shared cab back to Aut, board the overnight bus to Delhi around 7:30 PM. Reach ISBT early next morning.",
-      stay: "Overnight bus (Aut to Delhi)",
-      estimatedCostPerPerson: 2700,
+      schedule: [
+        {
+          start: "07:00",
+          end: "08:00",
+          kind: "travel",
+          activity: "Cab up to Jalori Pass, about 1 hour.",
+        },
+        {
+          start: "08:00",
+          end: "12:30",
+          kind: "activity",
+          activity: "Serolsar Lake trek, 5 km each way on a gentle gradient through old oak forest. Carry water; there's one dhaba at the pass and nothing after it.",
+        },
+        {
+          start: "12:30",
+          end: "13:30",
+          kind: "meal",
+          activity: "Maggi and chai at the Jalori Pass dhaba.",
+        },
+        {
+          start: "13:30",
+          end: "15:00",
+          kind: "travel",
+          activity: "Back down to Jibhi, collect bags and check out.",
+        },
+        {
+          start: "15:00",
+          end: "16:00",
+          kind: "activity",
+          activity: "Banjar market for Kullu shawls, rajma and wild apricot jam.",
+        },
+        {
+          start: "16:00",
+          end: "18:00",
+          kind: "travel",
+          activity: "Shared cab from Banjar to Aut, about 2 hours.",
+        },
+        {
+          start: "19:30",
+          end: "05:30",
+          kind: "travel",
+          activity: "Overnight HRTC Volvo from Aut to Delhi, ₹1,250. Reaches ISBT Kashmere Gate around 5:30 AM on Monday.",
+        },
+      ],
+      stay: "Overnight Volvo (Aut to Delhi)",
+      estimatedCostPerPerson: 2900,
     },
   ],
-  totalEstimatedCostPerPerson: 8400,
+  totalEstimatedCostPerPerson: 6600,
   tradeOffExplanation:
-    "The adventure-vs-relaxed split is resolved by sequencing rather than averaging: Day 2 is the full trek day for the two who wanted it, Day 3 is deliberately slow for the one who did not, so nobody spends three days at someone else's pace. The wide budget spread is handled by holding the plan to ₹8,400 — under the ₹10,000 target and inside the lowest member's ₹5,000-ish comfort range once the overnight bus replaces a flight, which the group had ruled out anyway. The no-alcohol non-negotiable is respected at the campsite, the one place it would realistically come up, while the smoking-allowed preference is met with a designated area away from the tents.",
+    "The adventure-vs-relaxed split is resolved by sequencing rather than averaging: Day 2 is deliberately easy (a waterfall, a heritage walk, an early night) for the member who wanted a slow trip, and Day 3 is the Serolsar trek for the two who wanted adventure, so nobody spends the whole trip at someone else's pace. The wide budget spread is handled by holding the plan to ₹6,600, close to the lowest member's comfort range; the overnight Volvos also save two nights of rooms, and the group had ruled out flights anyway. Nothing on the plan involves alcohol, which respects the no-alcohol non-negotiable, and smokers can step out at any of the open-air stops.",
 };
 
 async function main() {
@@ -114,6 +192,8 @@ async function main() {
         source: "Delhi",
         destination: "Jibhi",
         durationDays: 3,
+        departurePreference: "evening",
+        returnPreference: "morning",
         aggregatedData: AGGREGATED_DATA,
         itinerary: ITINERARY,
       },

@@ -160,6 +160,8 @@ router.post("/:tripId/generate-stream", authRequired, generateLimiter, async (re
             source: trip.source,
             destination: trip.destination,
             durationDays: trip.durationDays,
+            departurePreference: trip.departurePreference || "any",
+            returnPreference: trip.returnPreference || "any",
           },
           aggregated_data: trip.aggregatedData,
         }),
