@@ -337,7 +337,7 @@ export default function TripDashboard() {
             <span className="text-slate-300">{trip?.destination}</span>
           </div>
           <p className="text-slate-500">
-            {trip?.durationDays} days &middot; Organized by{" "}
+            {trip?.durationDays} days in {trip?.destination} &middot; Organized by{" "}
             <span className="text-slate-300">{trip?.organiserName}</span>
           </p>
           {trip && travelTimesText(trip) && (
@@ -406,6 +406,7 @@ export default function TripDashboard() {
             <ItineraryView
               itinerary={trip.itinerary}
               issues={trip.itineraryIssues}
+              route={trip}
             />
 
             {error && (

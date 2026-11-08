@@ -177,9 +177,13 @@ export default function CreateTripModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    How many days?
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
+                    Days at {form.destination.trim() || "the destination"}
                   </label>
+                  <p className="text-slate-500 text-xs mb-2">
+                    Travel isn&apos;t counted. Leave Friday evening and be back
+                    Tuesday morning = 3 days (Sat, Sun, Mon).
+                  </p>
                   <input
                     type="number"
                     required

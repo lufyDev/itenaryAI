@@ -50,7 +50,7 @@ const ITINERARY = {
     "Leave Delhi on a Friday-night Volvo, get two full days in Jibhi, and be back at ISBT on Monday morning. One easy day, one real trek, and an overnight bus both ways keeps the cost well inside everyone's budget without cutting anyone's must-do activity.",
   days: [
     {
-      day: 1,
+      day: 0,
       schedule: [
         {
           start: "19:00",
@@ -69,7 +69,7 @@ const ITINERARY = {
       estimatedCostPerPerson: 1300,
     },
     {
-      day: 2,
+      day: 1,
       schedule: [
         {
           start: "06:30",
@@ -112,7 +112,7 @@ const ITINERARY = {
       estimatedCostPerPerson: 2400,
     },
     {
-      day: 3,
+      day: 2,
       schedule: [
         {
           start: "07:00",
@@ -163,7 +163,7 @@ const ITINERARY = {
   ],
   totalEstimatedCostPerPerson: 6600,
   tradeOffExplanation:
-    "The adventure-vs-relaxed split is resolved by sequencing rather than averaging: Day 2 is deliberately easy (a waterfall, a heritage walk, an early night) for the member who wanted a slow trip, and Day 3 is the Serolsar trek for the two who wanted adventure, so nobody spends the whole trip at someone else's pace. The wide budget spread is handled by holding the plan to ₹6,600, close to the lowest member's comfort range; the overnight Volvos also save two nights of rooms, and the group had ruled out flights anyway. Nothing on the plan involves alcohol, which respects the no-alcohol non-negotiable, and smokers can step out at any of the open-air stops.",
+    "The adventure-vs-relaxed split is resolved by sequencing rather than averaging: Day 1 is deliberately easy (a waterfall, a heritage walk, an early night) for the member who wanted a slow trip, and Day 2 is the Serolsar trek for the two who wanted adventure, so nobody spends the whole trip at someone else's pace. The wide budget spread is handled by holding the plan to ₹6,600, close to the lowest member's comfort range; the overnight Volvos also save two nights of rooms, and the group had ruled out flights anyway. Nothing on the plan involves alcohol, which respects the no-alcohol non-negotiable, and smokers can step out at any of the open-air stops.",
 };
 
 async function main() {
@@ -191,7 +191,8 @@ async function main() {
         title: DEMO_TITLE,
         source: "Delhi",
         destination: "Jibhi",
-        durationDays: 3,
+        // Days in Jibhi. Day 0 is the Friday-night bus, so it isn't counted.
+        durationDays: 2,
         departurePreference: "evening",
         returnPreference: "morning",
         aggregatedData: AGGREGATED_DATA,

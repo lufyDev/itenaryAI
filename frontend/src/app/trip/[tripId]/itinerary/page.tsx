@@ -107,7 +107,7 @@ export default function SharedItineraryPage() {
             <span className="text-slate-300">{trip.destination}</span>
           </div>
           <p className="text-slate-500">
-            {trip.durationDays} days &middot; Organized by{" "}
+            {trip.durationDays} days in {trip.destination} &middot; Organized by{" "}
             <span className="text-slate-300">{trip.organiserName}</span>
           </p>
         </motion.div>
@@ -115,6 +115,7 @@ export default function SharedItineraryPage() {
         <ItineraryView
           itinerary={trip.itinerary}
           issues={trip.itineraryIssues}
+          route={trip}
         />
       </div>
 

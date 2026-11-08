@@ -337,7 +337,7 @@ function SurveyFormContent() {
             {trip?.title}
           </h1>
           <p className="text-slate-500">
-            {trip?.durationDays} days &middot; Organized by{" "}
+            {trip?.durationDays} days in {trip?.destination} &middot; Organized by{" "}
             <span className="text-slate-300">{trip?.organiserName}</span>
           </p>
           <p className="text-slate-600 text-sm mt-3">

@@ -115,7 +115,47 @@ function LegacySlots({ day }: { day: ItineraryDay }) {
   );
 }
 
-function DayCard({ day, index }: { day: ItineraryDay; index: number }) {
+export interface TripRoute {
+  source: string;
+  destination: string;
+  durationDays: number;
+}
+
+/**
+ * Day 1..N are the days at the destination. Day 0 and Day N+1 are travel days
+ * around them (e.g. the Friday-night bus for a Sat-Mon trip), so they get
+ * their own names instead of numbers that look like extra holiday days.
+ */
+function dayHeading(day: ItineraryDay, route?: TripRoute) {
+  if (day.day === 0) {
+    return {
+      title: "Departure",
+      subtitle: route
+        ? `Leave ${route.source} · the day before Day 1`
+        : "The day before Day 1",
+      travel: true,
+    };
+  }
+  if (route && day.day > route.durationDays) {
+    return {
+      title: "Return",
+      subtitle: `Back to ${route.source} · the day after Day ${route.durationDays}`,
+      travel: true,
+    };
+  }
+  return { title: `Day ${day.day}`, subtitle: null, travel: false };
+}
+
+function DayCard({
+  day,
+  index,
+  route,
+}: {
+  day: ItineraryDay;
+  index: number;
+  route?: TripRoute;
+}) {
+  const heading = dayHeading(day, route);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -125,11 +165,24 @@ function DayCard({ day, index }: { day: ItineraryDay; index: number }) {
     >
       <div className="flex items-center justify-between px-6 py-4 border-b border-stone-800/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center">
-            <MapPin className="w-4.5 h-4.5 text-amber-400" />
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+              heading.travel
+                ? "bg-sky-500/10"
+                : "bg-gradient-to-br from-amber-500/20 to-orange-500/10"
+            }`}
+          >
+            {heading.travel ? (
+              <Bus className="w-4.5 h-4.5 text-sky-300" />
+            ) : (
+              <MapPin className="w-4.5 h-4.5 text-amber-400" />
+            )}
           </div>
           <div>
-            <h3 className="text-white font-bold">Day {day.day}</h3>
+            <h3 className="text-white font-bold">{heading.title}</h3>
+            {heading.subtitle && (
+              <p className="text-slate-500 text-xs mt-0.5">{heading.subtitle}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-1 text-emerald-400 text-sm font-medium bg-emerald-500/10 px-3 py-1.5 rounded-lg">
@@ -158,9 +211,12 @@ function DayCard({ day, index }: { day: ItineraryDay; index: number }) {
 export default function ItineraryView({
   itinerary,
   issues = [],
+  route,
 }: {
   itinerary: Itinerary;
   issues?: string[];
+  // Lets travel days (Day 0, Day N+1) be labelled as departure and return.
+  route?: TripRoute;
 }) {
   return (
     <div className="space-y-5">
@@ -207,7 +263,7 @@ export default function ItineraryView({
       {/* Day Cards */}
       <div className="space-y-4">
         {(itinerary.days ?? []).map((day, i) => (
-          <DayCard key={day.day} day={day} index={i} />
+          <DayCard key={day.day} day={day} index={i} route={route} />
         ))}
       </div>
 
